@@ -58,6 +58,10 @@ public class NQueens {
             }
             System.out.println();
         }
+
+        // Now, make the root node
+        Node<char[][]> root = new Node<char[][]>(state);
+
         // Now, given the current board state, find out the h values of each next move.
 
         // Now, for the current node in the tree, expand to the next node, making sure
