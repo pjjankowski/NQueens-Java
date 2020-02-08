@@ -94,7 +94,7 @@ public class NQueens {
         }
 
         // Check if there is another queen on the same left diagonal
-        int currentCol = column + 1;
+        int currentCol = column - 1;
         int currentRow = row - 1;
         while (currentCol >= 0 && currentRow >= 0) {
             if (state[currentRow][currentCol] != '*') {
