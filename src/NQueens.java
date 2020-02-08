@@ -192,14 +192,33 @@ public class NQueens {
 
     // Expand the current node's state using h1, and generate successor states, adding them
     // to the node's list of children, if the current node has not already been expanded yet
-    public static void hExpand(int[] hCurrent, Node<char[][]> currentNode, String heuristic) {
+    public static Node<char[][]> hExpand(int[] currentQueen, Node<char[][]> currentNode, String heuristic) {
         if (currentNode.children.size() > 0) {
             // This node has already been expanded, so no need to do it again.
+            return currentNode;
         }
         if (heuristic.equals("h1")) {
             // TODO
+            int row = currentQueen[0];
+            int column = currentQueen[1];
+            char[][] currentState = currentNode.state;
+            int rows = currentState.length;
+            for (int i = 0; i < rows; i++) {
+                if (i != row) {
+                    // Clone the old state to a new state, only changing where the queen is located
+                    char[][] newState = currentState.clone();
+                    newState[i][column] = currentState[row][column];
+                    newState[row][column] = '*';
+                    int cost = Math.abs(row - i) * currentQueen[2];
+                    // Now, make a node that has the new state in it as a child
+                    currentNode.addChild(newState, cost);
+                }
+
+            }
+            return currentNode;
         } else {
             // TODO
+            return currentNode;
         }
     }
 
@@ -214,7 +233,7 @@ public class NQueens {
         // each queen starts in their own column, and a random row
         // # = queen, * = empty
         char[][] state = generateStart(numQueens);
-        char[][] startState = state;
+        char[][] startState = state.clone();
 
         // Print the starting configuration for the user
         System.out.println("Starting board state:");
@@ -254,18 +273,20 @@ public class NQueens {
                 int[] queenToMove = new int[2];
                 queenToMove = hCurrent(current.state, heuristic);
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                totalNodesExpanded++;
-                hExpand(queenToMove, current, heuristic);
+                Node<char[][]> expanded = hExpand(queenToMove, current, heuristic);
+                if (expanded.children.size() > current.children.size()) {
+                    totalNodesExpanded++;
+                    current.children = new ArrayList<Node<char[][]>>(expanded.children);
+                }
                 // Now we look at each of the children of the current state that have been generated and
                 // pick one at random to use next based on what has the best heuristic, ignoring cost
                 int bestHeuristic = -1;
-                ArrayList<Node<char[][]>> options = null;
+                ArrayList<Node<char[][]>> options = new ArrayList<Node<char[][]>>();
                 //Node<char[][]> next = null;
                 for (Node<char[][]> e: current.children) {
                     if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
                         bestHeuristic = e.heuristicVal;
-                        //next = e;
-                        options = null;
+                        options = new ArrayList<Node<char[][]>>();
                         options.add(e);
                     } else if (e.heuristicVal == bestHeuristic) {
                         options.add(e);
