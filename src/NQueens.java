@@ -239,7 +239,7 @@ public class NQueens {
         System.out.println("Starting board state:");
         for (int i = 0; i < numQueens; i++) {
             for (int j = 0; j < numQueens; j++) {
-                System.out.print(state[i][j]);
+                System.out.print(" " + state[i][j]);
             }
             System.out.println();
         }
@@ -300,13 +300,14 @@ public class NQueens {
                     // pick one at random for the next looping
                     int choice = options.size();
                     Random rand = new Random();
+                    // Randomness here may not be working, check this.
                     choice = rand.nextInt(choice);
                     current = options.get(choice);
                     // Print current board state to see what happens
                     System.out.println("Current board state:");
                     for (int i = 0; i < numQueens; i++) {
                         for (int j = 0; j < numQueens; j++) {
-                            System.out.print(current.state[i][j]);
+                            System.out.print(" " + current.state[i][j]);
                         }
                         System.out.println();
                     }
