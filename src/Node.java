@@ -16,9 +16,11 @@ public class Node<T> {
         this.children = new ArrayList<Node<T>>();
     }
 
-    public Node<T> addChild(T childState, int cost) { // Add a new child node with the given state to the current node
+    public Node<T> addChild(T childState, int cost, int heuristic) {
+        // Add a new child node with the given state and h value to the current node
         Node<T> childNode = new Node<T>(childState);
         childNode.parent = this;
+        childNode.heuristicVal = heuristic;
         // Accumulated cost for child = parent cost + cost of move from parent to child
         childNode.costAccumulated = this.costAccumulated + cost;
         this.children.add(childNode);

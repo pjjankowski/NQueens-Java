@@ -211,7 +211,7 @@ public class NQueens {
                     newState[row][column] = '*';
                     int cost = Math.abs(row - i) * currentQueen[2];
                     // Now, make a node that has the new state in it as a child
-                    currentNode.addChild(newState, cost);
+                    currentNode.addChild(newState, cost, hCurrent(newState, heuristic)[2]);
                 }
 
             }
@@ -254,17 +254,15 @@ public class NQueens {
         root.heuristicVal = hCurrent(state, heuristic)[2];
 
         // Set the current node up to be the root node,
+        current = new Node<char[][]>(state);
         current.heuristicVal = root.heuristicVal;
-        current.costAccumulated = 0;
-        current.state = state;
-        current.parent = null;
-        current.children = new ArrayList<Node<char[][]>>();
 
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
             // Perform A* with backtracking
         }
+
         else { //(searchType == 2)
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             while(!isSolution(current.state)) {
@@ -292,9 +290,11 @@ public class NQueens {
                         options.add(e);
                     }
                 }
-                // What do we do if no children provide improvements? Reset! (may add sideways moves later)
-                if (bestHeuristic >= current.heuristicVal) {
+                // What do we do if no children provide improvements or sideways? Reset!
+                // (currently gets stuck with sideways moves)
+                if (bestHeuristic > current.heuristicVal) {
                     current = root;
+                    System.out.println("Resetting!");
                 } else {
                     // Now that we have a list of best possible children that are better,
                     // pick one at random for the next looping
@@ -302,11 +302,20 @@ public class NQueens {
                     Random rand = new Random();
                     choice = rand.nextInt(choice);
                     current = options.get(choice);
+                    // Print current board state to see what happens
+                    System.out.println("Current board state:");
+                    for (int i = 0; i < numQueens; i++) {
+                        for (int j = 0; j < numQueens; j++) {
+                            System.out.print(current.state[i][j]);
+                        }
+                        System.out.println();
+                    }
+                    test = hCurrent(current.state, heuristic);
+                    System.out.println(test[0] + " " + test[1] + " " + test[2]);
                 }
             }
             // IF we run into a situation where there are no improvements to be made, then
             // make a number of sideways moves, after which, we reset
-
         }
 
         // Now, for the current node in the tree, go the next node, making sure
