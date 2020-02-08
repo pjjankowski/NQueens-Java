@@ -82,6 +82,61 @@ public class NQueens {
         return false;
     }
 
+    // A helper function to count the number of attackers on a given queen at row, column
+    public static int numAttackers(int row, int column, char[][] state) {
+        int attackers = 0;
+        // Check if there is another queen in the same row:
+        for (int k = 0; k < state.length; k++) {
+            if (state[k][column] != '*' && k != row) {
+                // Queen is attacked in the same row
+                attackers++;
+            }
+        }
+
+        // Check if there is another queen on the same left diagonal
+        int currentCol = column--;
+        int currentRow = row--;
+        while (currentCol >= 0 && currentRow >= 0) {
+            if (state[currentRow][currentCol] != '*') {
+                attackers++;
+            }
+            currentCol--;
+            currentRow--;
+        }
+        currentCol = column++;
+        currentRow = row++;
+        while (currentCol < state.length && currentRow < state.length) {
+            if (state[currentRow][currentCol] != '*') {
+                attackers++;
+            }
+            currentCol++;
+            currentRow++;
+        }
+
+        // Check if there is another queen on the same right diagonal
+        currentCol = column--;
+        currentRow = row++;
+        while (currentCol >= 0 && currentRow < state.length) {
+            if (state[currentRow][currentCol] != '*') {
+                attackers++;
+            }
+            currentCol--;
+            currentRow++;
+        }
+        currentCol = column++;
+        currentRow = row--;
+        while (currentCol < state.length && currentRow >= 0) {
+            if (state[currentRow][currentCol] != '*') {
+                attackers++;
+            }
+            currentCol++;
+            currentRow--;
+        }
+
+        // If you get here, nothing attacks this queen
+        return attackers;
+    }
+
     // For H1: Returns the coordinates of the lowest cost attacking queen, and that queen's weight
     public static int[] h1Current(char[][] state) {
         int[] coordsThenWeight = new int[3];
