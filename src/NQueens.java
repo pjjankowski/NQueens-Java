@@ -32,15 +32,15 @@ public class NQueens {
     public static boolean isAttacked(int row, int column, char[][] state) {
         //Check if there is another queen in the same row:
         for (int k = 0; k < state.length; k++) {
-            if (state[k][column] != '*' && k != row) {
+            if (state[row][k] != '*' && k != column) {
                 // Queen is attacked in the same row
                 return true;
             }
         }
 
         // Check if there is another queen on the same left diagonal
-        int currentCol = column--;
-        int currentRow = row--;
+        int currentCol = column - 1;
+        int currentRow = row - 1;
         while (currentCol >= 0 && currentRow >= 0) {
             if (state[currentRow][currentCol] != '*') {
                 return true;
@@ -48,8 +48,8 @@ public class NQueens {
             currentCol--;
             currentRow--;
         }
-        currentCol = column++;
-        currentRow = row++;
+        currentCol = column + 1;
+        currentRow = row + 1;
         while (currentCol < state.length && currentRow < state.length) {
             if (state[currentRow][currentCol] != '*') {
                 return true;
@@ -59,8 +59,8 @@ public class NQueens {
         }
 
         // Check if there is another queen on the same right diagonal
-        currentCol = column--;
-        currentRow = row++;
+        currentCol = column - 1;
+        currentRow = row + 1;
         while (currentCol >= 0 && currentRow < state.length) {
             if (state[currentRow][currentCol] != '*') {
                 return true;
@@ -68,8 +68,8 @@ public class NQueens {
             currentCol--;
             currentRow++;
         }
-        currentCol = column++;
-        currentRow = row--;
+        currentCol = column + 1;
+        currentRow = row - 1;
         while (currentCol < state.length && currentRow >= 0) {
             if (state[currentRow][currentCol] != '*') {
                 return true;
@@ -87,15 +87,15 @@ public class NQueens {
         int attackers = 0;
         // Check if there is another queen in the same row:
         for (int k = 0; k < state.length; k++) {
-            if (state[k][column] != '*' && k != row) {
+            if (state[row][k] != '*' && k != column) {
                 // Queen is attacked in the same row
                 attackers++;
             }
         }
 
         // Check if there is another queen on the same left diagonal
-        int currentCol = column--;
-        int currentRow = row--;
+        int currentCol = column + 1;
+        int currentRow = row - 1;
         while (currentCol >= 0 && currentRow >= 0) {
             if (state[currentRow][currentCol] != '*') {
                 attackers++;
@@ -103,8 +103,8 @@ public class NQueens {
             currentCol--;
             currentRow--;
         }
-        currentCol = column++;
-        currentRow = row++;
+        currentCol = column + 1;
+        currentRow = row + 1;
         while (currentCol < state.length && currentRow < state.length) {
             if (state[currentRow][currentCol] != '*') {
                 attackers++;
@@ -114,8 +114,8 @@ public class NQueens {
         }
 
         // Check if there is another queen on the same right diagonal
-        currentCol = column--;
-        currentRow = row++;
+        currentCol = column - 1;
+        currentRow = row + 1;
         while (currentCol >= 0 && currentRow < state.length) {
             if (state[currentRow][currentCol] != '*') {
                 attackers++;
@@ -123,8 +123,8 @@ public class NQueens {
             currentCol--;
             currentRow++;
         }
-        currentCol = column++;
-        currentRow = row--;
+        currentCol = column + 1;
+        currentRow = row - 1;
         while (currentCol < state.length && currentRow >= 0) {
             if (state[currentRow][currentCol] != '*') {
                 attackers++;
