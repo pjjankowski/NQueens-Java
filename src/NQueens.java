@@ -28,12 +28,90 @@ public class NQueens {
         return state;
     }
 
+    // A helper function to check if the queen at (row, column) is attacked
+    public static boolean isAttacked(int row, int column, char[][] state) {
+        //Check if there is another queen in the same row:
+        for (int k = 0; k < state.length; k++) {
+            if (state[k][column] != '*' && k != row) {
+                // Queen is attacked in the same row
+                return true;
+            }
+        }
+
+        // Check if there is another queen on the same left diagonal
+        int currentCol = column--;
+        int currentRow = row--;
+        while (currentCol >= 0 && currentRow >= 0) {
+            if (state[currentRow][currentCol] != '*') {
+                return true;
+            }
+            currentCol--;
+            currentRow--;
+        }
+        currentCol = column++;
+        currentRow = row++;
+        while (currentCol < state.length && currentRow < state.length) {
+            if (state[currentRow][currentCol] != '*') {
+                return true;
+            }
+            currentCol++;
+            currentRow++;
+        }
+
+        // Check if there is another queen on the same right diagonal
+        currentCol = column--;
+        currentRow = row++;
+        while (currentCol >= 0 && currentRow < state.length) {
+            if (state[currentRow][currentCol] != '*') {
+                return true;
+            }
+            currentCol--;
+            currentRow++;
+        }
+        currentCol = column++;
+        currentRow = row--;
+        while (currentCol < state.length && currentRow >= 0) {
+            if (state[currentRow][currentCol] != '*') {
+                return true;
+            }
+            currentCol++;
+            currentRow--;
+        }
+
+        // If you get here, nothing attacks this queen
+        return false;
+    }
+
     // For H1: Returns the coordinates of the lowest cost attacking queen, and that queen's weight
     public static int[] h1Current(char[][] state) {
-        return null;
+        int[] coordsThenWeight = new int[3];
+        coordsThenWeight[2] = 10;
+
+        // Start weight off as 10 to take the first attacked queen you see
+        // If the weight stays as 10, no queens are attacked
+        for (int i = 0; i < state.length; i++) {
+            for (int j = 0; j < state.length; j++) {
+
+                // Note: May want to add randomness to pick queen of equal cost to best or not
+                // or pick the most attacked queen out of the lightest
+                if (state[i][j] != '*') {
+                    // If this queen is lighter than previous best, and is attacked, take it as best so far
+                    int queenVal = Integer.parseInt(Character.toString(state[i][j]));
+                    if (queenVal < coordsThenWeight[2]) {
+                        if (isAttacked(i, j, state)) {
+                            coordsThenWeight[0] = i; // The row of the lowest cost queen so far
+                            coordsThenWeight[1] = j; // The column of the lowest cost queen so far
+                            coordsThenWeight[2] = queenVal; // The weight of the lowest cost queen so far
+                        }
+                    }
+                }
+            }
+        }
+        return coordsThenWeight;
     }
 
     // For H1: Returns the coordinates and cost of the best next move, given knowing what queen to move
+    // Note that h1Current[0] is row, [1] is column, [2] is weight
     public static int[] h1Next(int[] h1Current) {
         return null;
     }
@@ -58,6 +136,11 @@ public class NQueens {
             }
             System.out.println();
         }
+
+        // Test to show h1Current is working
+        int[] test = new int[3];
+        test = h1Current(state);
+        System.out.print(test[0] + " " + test[1] + " " + test[2]);
 
         // Now, make the root node
         Node<char[][]> root = new Node<char[][]>(state);
