@@ -5,11 +5,13 @@ public class Node<T> {
 
     T state; // The state held by the node
     int costAccumulated; // The cost of all previous nodes combined
+    int heuristicVal; // The value of the heuristic. For h1 and h2, 0 = solution, higher is worse.
     Node<T> parent; // The node with the previous state to this one
     ArrayList<Node<T>> children; // A list of all children of the node, (nodes with successor states)
 
     public Node(T state) { // Build a node from scratch with no parent, (used for root only)
         this.state = state;
+        this.parent = null;
         this.costAccumulated = 0; // The root has no cost to get to it
         this.children = new ArrayList<Node<T>>();
     }

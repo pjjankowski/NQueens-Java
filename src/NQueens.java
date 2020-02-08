@@ -191,8 +191,11 @@ public class NQueens {
     // Note that h1Current[0] is row, [1] is column, [2] is weight
 
     // Expand the current node's state using h1, and generate successor states, adding them
-    // to the node's list of children
+    // to the node's list of children, if the current node has not already been expanded yet
     public static void hExpand(int[] hCurrent, Node<char[][]> currentNode, String heuristic) {
+        if (currentNode.children.size() > 0) {
+            // This node has already been expanded, so no need to do it again.
+        }
         if (heuristic.equals("h1")) {
             // TODO
         } else {
@@ -227,10 +230,12 @@ public class NQueens {
         test = hCurrent(state, heuristic);
         System.out.print(test[0] + " " + test[1] + " " + test[2]);
 
-        // Now, make the root node for reference later
+        // Now, make the root node for reference later if you must reset
         Node<char[][]> root = new Node<char[][]>(state);
+        root.heuristicVal = hCurrent(state, heuristic)[2];
 
-        // Set the current node up to be the root node
+        // Set the current node up to be the root node,
+        current.heuristicVal = root.heuristicVal;
         current.costAccumulated = 0;
         current.state = state;
         current.parent = null;
@@ -243,21 +248,43 @@ public class NQueens {
         }
         else { //(searchType == 2)
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            if (isSolution(current.state)) {
+            while(!isSolution(current.state)) {
                 // Stop once the current state is a solution, and print it out
+                // First we find what queen we want to move
+                int[] queenToMove = new int[2];
+                queenToMove = hCurrent(current.state, heuristic);
+                // Next we expand the current node, (add all possible successors as children based on heuristic)
+                totalNodesExpanded++;
+                hExpand(queenToMove, current, heuristic);
+                // Now we look at each of the children of the current state that have been generated and
+                // pick one at random to use next based on what has the best heuristic, ignoring cost
+                int bestHeuristic = -1;
+                ArrayList<Node<char[][]>> options = null;
+                //Node<char[][]> next = null;
+                for (Node<char[][]> e: current.children) {
+                    if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
+                        bestHeuristic = e.heuristicVal;
+                        //next = e;
+                        options = null;
+                        options.add(e);
+                    } else if (e.heuristicVal == bestHeuristic) {
+                        options.add(e);
+                    }
+                }
+                // What do we do if no children provide improvements? Reset! (may add sideways moves later)
+                if (bestHeuristic >= current.heuristicVal) {
+                    current = root;
+                } else {
+                    // Now that we have a list of best possible children that are better,
+                    // pick one at random for the next looping
+                    int choice = options.size();
+                    Random rand = new Random();
+                    choice = rand.nextInt(choice);
+                    current = options.get(choice);
+                }
             }
-            // First we find what queen we want to move
-            int[] queenToMove = new int[2];
-            queenToMove = hCurrent(current.state, heuristic);
-            // Next we expand the current node, (add all possible successors as children based on heuristic)
-            totalNodesExpanded++;
-            hExpand(queenToMove, current, heuristic);
-            // Now we look at each of the children of the current state that have been generated and
-            // pick one to use next based on what has the best heuristic, ignoring cost
             // IF we run into a situation where there are no improvements to be made, then
             // make a number of sideways moves, after which, we reset
-
-            // Once we've picked a child, make that node the current node and keep going.
 
         }
 
