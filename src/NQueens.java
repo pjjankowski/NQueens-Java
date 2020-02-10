@@ -181,7 +181,6 @@ public class NQueens {
             // This node has already been expanded, so no need to do it again.
             return currentNode;
         }
-        if (heuristic.equals("h1")) {
             Queen[] currentState = currentNode.state;
             int queens = currentState.length;
             // For each queen, make all moves possible to put the queen in a different row,
@@ -204,10 +203,6 @@ public class NQueens {
                 }
             }
             return currentNode;
-        } else {
-            // TODO
-            return currentNode;
-        }
     }
 
     public static void main(String[] args) {
