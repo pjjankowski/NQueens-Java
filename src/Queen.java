@@ -26,7 +26,7 @@ public class Queen {
     	return false;
     }
 
-    //test
+    //test 2
     
     public Queen(Queen q) {
         this.row = q.row;
