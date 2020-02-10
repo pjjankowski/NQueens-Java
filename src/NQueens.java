@@ -119,8 +119,26 @@ public class NQueens {
                 // There are no moves left to make, you are at a solution already!
                 return -1;
             }
-        } else { // H2: TODO
-            return -1;
+        } else { // H2: ----------------------------------------------------------------------
+        	int sumOfLightestQueens = 0;
+        	/*
+        	 * For each queen on the board:
+        	 * Iterate through every queen after it, and
+        	 * if they attack each other,
+        	 * Add the lowest of their weights to the sum
+        	 */
+        	// for each queen on the board...
+        	for(int i = 0; i < state.length; i++) {
+        		// iterate through every queen after it
+	        	for(int curPos = i; curPos < state.length; curPos++) {
+	        		// and if they attack each other...
+	        		if(state[i].isAttackedBy(state[curPos])) {
+	        			//add the lowest of their weights to the sum
+	        			sumOfLightestQueens += Math.min(state[i].weight, state[curPos].weight);
+	        		}
+	        	}
+        	}
+        	return sumOfLightestQueens;
         }
     }
 
@@ -150,7 +168,6 @@ public class NQueens {
             }
             return currentNode;
         } else {
-            // TODO
             return currentNode;
         }
     }
@@ -182,7 +199,7 @@ public class NQueens {
                 }
             }
             return currentNode;
-        } else {
+        } else { 
             // TODO
             return currentNode;
         }
