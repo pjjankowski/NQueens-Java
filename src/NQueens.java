@@ -341,8 +341,7 @@ public class NQueens {
                         // pick one at random for the next looping
                         int choice = options.size();
                         Random rand = new Random();
-                        // Randomness here may not be working, check this.
-                        // PROBLEM: DOES NOT NECESSARILY PICK OPTIONS
+                        // NOTE: DOES NOT NECESSARILY PICK OPTIONS
                         // THAT IMPROVE IF THEY HAVE SAME H VALUE
                         // AS ONES THAT DONT, (if 4 is attacked at minimum
                         // no matter what, it can pick a move that does not
