@@ -9,4 +9,20 @@ public class Queen {
         this.column = column;
         this.weight = weight;
     }
+    
+    public boolean isAttackedBy(Queen usurper) {
+    	if(usurper.equals(this)) { // stop hitting yourself!
+    		return false;
+    	}
+    	// check row and col
+    	if(usurper.row == this.row || usurper.column == this.column) {
+    		return true;
+    	}    	
+    	// check diagonal
+    	if(usurper.row - this.row == usurper.column - this.column) {
+    		return true;
+    	}
+    	// else
+    	return false;
+    }
 }
