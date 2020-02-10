@@ -26,6 +26,8 @@ public class Queen {
     	return false;
     }
 
+    //test
+    
     public Queen(Queen q) {
         this.row = q.row;
         this.column = q.column;
