@@ -280,7 +280,8 @@ public class NQueens {
         else { //(searchType == 2)
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-            int sideWaysMovesLimit = 10000; // Adjust as desired
+            int sideWaysMovesLimit = 5000; // Adjust as desired
+            // NOTE: Has severe problems with n > 9 boards
             int numResets = 0; // Keep track of the number of times you reset
             while(!isSolution(current.state)) {
                 // First expand current node, then pick from best children
@@ -308,6 +309,10 @@ public class NQueens {
                 // after a certain number)
                 if (bestHeuristic > current.heuristicVal) {
                     current = root;
+                    // Starting from scratch instead of current = root might be better,
+                    // but needs testing with a set board state for time:
+                    //current = new Node<Queen[]>(state);
+                    //current.heuristicVal = hCurrent(state, heuristic);
                     System.out.println("Resetting!");
                     sideWaysMoves = 0;
                     numResets++;
@@ -319,6 +324,8 @@ public class NQueens {
                         sideWaysMoves++;
                         if (sideWaysMoves > sideWaysMovesLimit) {
                             current = root;
+                            //current = new Node<Queen[]>(state);
+                            //current.heuristicVal = hCurrent(state, heuristic);
                             System.out.println("Resetting!");
                             sideWaysMoves = 0;
                             numResets++;
