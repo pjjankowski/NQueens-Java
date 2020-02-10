@@ -95,10 +95,9 @@ public class NQueens {
     }
 
     // For H1 and H2: Returns the value for the heuristic value for a given state
-    // NOTE: MAY NOT NEED THIS BASED ON THE FACT THAT WE EXPAND TO ALL QUEENS
     public static int hCurrent(Queen[] state, String heuristic) {
         if (heuristic.equals("h1")) {
-            int lowestWeight = 10;
+            int lowestWeight = 82;
             int bestIndex = -1;
             // Start weight off as 10 to take the first attacked queen you see
             // If the weight stays as 10, no queens are attacked
@@ -106,7 +105,7 @@ public class NQueens {
                 // Note: May want to add randomness to pick queen of equal cost to best or not
                 // or pick the most attacked queen out of the lightest
                 // If this queen is lighter than previous best, and is attacked, take it as best so far
-                int queenVal = state[i].weight;
+                int queenVal = state[i].weight * state[i].weight;
                 if (queenVal < lowestWeight) {
                     if (isAttacked(i, state)) {
                         bestIndex = i;
@@ -117,7 +116,7 @@ public class NQueens {
                 return lowestWeight;
             } else {
                 // There are no moves left to make, you are at a solution already!
-                return -1;
+                return 0;
             }
         } else { // H2: TODO
             return -1;
@@ -141,11 +140,14 @@ public class NQueens {
             for (int i = 0; i < rows; i++) {
                 if (i != row) {
                     // Clone the old state to a new state, only changing where the queen is located
-                    Queen[] newState = currentState.clone();
+                    Queen[] newState = new Queen[currentState.length];
+                    for (int j = 0; j < newState.length; j++) {
+                        newState[j] = new Queen(currentState[j]);
+                    }
                     newState[currentQueen].row = i;
-                    int cost = Math.abs(row - i) * currentState[currentQueen].weight ^ 2;
+                    int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
                     // Now, make a node that has the new state in it as a child
-                    currentNode.addChild(newState, cost, currentState[hCurrent(newState, heuristic)].weight);
+                    currentNode.addChild(newState, cost, hCurrent(newState, heuristic));
                 }
             }
             return currentNode;
@@ -173,11 +175,14 @@ public class NQueens {
                     // Don't consider moves where a queen ends up in the same row, that's not a move!
                     if (i != row) {
                         // Clone the old state to a new state, only changing where the queen is located
-                        Queen[] newState = currentState.clone();
+                        Queen[] newState = new Queen[currentState.length];
+                        for (int j = 0; j < newState.length; j++) {
+                            newState[j] = new Queen(currentState[j]);
+                        }
                         newState[currentQueen].row = i;
-                        int cost = Math.abs(row - i) * currentState[currentQueen].weight ^ 2;
+                        int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
                         // Now, make a node that has the new state in it as a child
-                        currentNode.addChild(newState, cost, currentState[currentQueen].weight);
+                        currentNode.addChild(newState, cost, hCurrent(newState, heuristic));
                     }
                 }
             }
@@ -200,7 +205,10 @@ public class NQueens {
         // # = queen, * = empty
         Queen[] state = generateStart(numQueens);
         // Save a copy of the start state for later
-        Queen[] startState = state.clone();
+        Queen[] startState = new Queen[state.length];
+        for (int j = 0; j < state.length; j++) {
+            startState[j] = new Queen(state[j]);
+        }
 
         // Print the starting configuration for the user
         System.out.println("Starting board state:");

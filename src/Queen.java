@@ -9,4 +9,10 @@ public class Queen {
         this.column = column;
         this.weight = weight;
     }
+
+    public Queen(Queen q) {
+        this.row = q.row;
+        this.column = q.column;
+        this.weight = q.weight;
+    }
 }
