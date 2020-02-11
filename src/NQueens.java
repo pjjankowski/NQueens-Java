@@ -151,41 +151,43 @@ public class NQueens {
             // This node has already been expanded, so no need to do it again.
             return currentNode;
         }
-        if (heuristic.equals("h1")) {
-            Queen[] currentState = currentNode.state;
-            int row = currentState[currentQueen].row;
-            int rows = currentState.length;
-            for (int i = 0; i < rows; i++) {
-                if (i != row) {
-                    // Clone the old state to a new state, only changing where the queen is located
-                    Queen[] newState = new Queen[currentState.length];
-                    for (int j = 0; j < newState.length; j++) {
-                        newState[j] = new Queen(currentState[j]);
-                    }
-                    newState[currentQueen].row = i;
-                    int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
-                    // Now, make a node that has the new state in it as a child
-                    currentNode.addChild(newState, cost, hCurrent(newState, heuristic));
+        Queen[] currentState = currentNode.state;
+        int row = currentState[currentQueen].row;
+        int rows = currentState.length;
+        for (int i = 0; i < rows; i++) {
+            if (i != row) {
+                // Clone the old state to a new state, only changing where the queen is located
+                Queen[] newState = new Queen[currentState.length];
+                for (int j = 0; j < newState.length; j++) {
+                    newState[j] = new Queen(currentState[j]);
                 }
+                newState[currentQueen].row = i;
+                int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
+                // Now, make a node that has the new state in it as a child
+                currentNode.addChild(newState, cost, hCurrent(newState, heuristic), currentQueen);
             }
-            return currentNode;
-        } else {
-            return currentNode;
         }
+        return currentNode;
     }
 
     // Expand the current node's state by moving ANY queen, and generate successor states, adding them
     // to the node's list of children, if the current node has not already been expanded yet
+    // OPTIMIZATION TODO: MAKE IT SO CHILDREN CANT MOVE THE SAME QUEEN AS THEIR
+    // PARENT, AS THOSE MOVES WON'T HELP THINGS AT ALL, (if they are better,
+    // then their parent has already expanded a child that has that better option)
+    // Want to find ways to restrict expansion and minimize b as much as
+    // possible
     public static Node<Queen[]> hExpand(Node<Queen[]> currentNode, String heuristic) {
         if (currentNode.children.size() > 0) {
             // This node has already been expanded, so no need to do it again.
             return currentNode;
         }
-            Queen[] currentState = currentNode.state;
-            int queens = currentState.length;
-            // For each queen, make all moves possible to put the queen in a different row,
-            // same column
-            for (int currentQueen = 0; currentQueen < queens; currentQueen++) {
+        Queen[] currentState = currentNode.state;
+        int queens = currentState.length;
+        // For each queen, make all moves possible to put the queen in a different row,
+        // same column
+        for (int currentQueen = 0; currentQueen < queens; currentQueen++) {
+            if (currentQueen != currentNode.lastMoveIndex) {
                 int row = currentState[currentQueen].row;
                 for (int i = 0; i < queens; i++) {
                     // Don't consider moves where a queen ends up in the same row, that's not a move!
@@ -198,11 +200,12 @@ public class NQueens {
                         newState[currentQueen].row = i;
                         int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
                         // Now, make a node that has the new state in it as a child
-                        currentNode.addChild(newState, cost, hCurrent(newState, heuristic));
+                        currentNode.addChild(newState, cost, hCurrent(newState, heuristic), currentQueen);
                     }
                 }
             }
-            return currentNode;
+        }
+        return currentNode;
     }
 
     public static void main(String[] args) {
@@ -244,31 +247,43 @@ public class NQueens {
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
             // TODO
-            if (isSolution(current.state)) {
-                // TODO
-            }
+            // Note so far: The PQ successfully orders and retrieves each
+            // node by costAccumulated + heuristic, but the problem is that
+            // it has no preference for solutions of the same cost to
+            // random configurations of the same cost + heuristic value.
             // Perform A* with backtracking if needed
             // First make a priority queue and fill it with all unexpanded nodes that
             // we've found as we go, (at start, just the root node's children)
             PriorityQueue<Node<Queen[]>> nodeQueue = new PriorityQueue<Node<Queen[]>>(new NodeComparator());
             // Add the starting node to the PQ
-            nodeQueue.add(current);
-            while (!nodeQueue.isEmpty()) {
+            //nodeQueue.add(current);
+            int moves = 0;
+            while (!nodeQueue.isEmpty() || moves == 0) {
                 if (isSolution(current.state)) {
                     // TODO
+                    // Continue checking if any nodes are left in the pq that
+                    // can be better
+                    // Print out the info like time, and path from start to end states
+                    nodeQueue.clear();
+                } else {
+                    // Generate current's children, then add them to the queue
+                    // Next we expand the current node, (add all possible successors as children based on heuristic)
+                    int prevChildren = current.children.size();
+                    Node<Queen[]> expanded = hExpand(current, heuristic);
+                    if (expanded.children.size() > prevChildren) {
+                        totalNodesExpanded++;
+                    }
+                    for (Node<Queen[]> e: current.children) {
+                        nodeQueue.add(e);
+                    }
+                    Node<Queen[]> test2 = nodeQueue.remove();
+                    current = test2;
+                    System.out.println("Current board state:");
+                    printBoard(current.state);
+                    test = hCurrent(current.state, heuristic);
+                    System.out.println(test + current.costAccumulated);
+                    moves++;
                 }
-                // Generate current's children, then add them to the queue
-                // Next we expand the current node, (add all possible successors as children based on heuristic)
-                // We want an expansion function that expands all children from the node
-                /*Node<char[][]> expanded = hExpand(current, heuristic);
-                *if (expanded.children.size() > current.children.size()) {
-                 *   totalNodesExpanded++;
-                  *  current.children = new ArrayList<Node<char[][]>>(expanded.children);
-                }*/
-                for (Node<Queen[]> e: current.children) {
-                    nodeQueue.add(e);
-                }
-                current = nodeQueue.remove();
             }
             // Each node will be given a score based on the cost to get to it
             // and the heuristic value of its state
@@ -278,9 +293,11 @@ public class NQueens {
         }
 
         else { //(searchType == 2)
+            // NOTE: h2 appears to need simulated annealing,
+            // can also try adding it for h1
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-            int sideWaysMovesLimit = 5000; // Adjust as desired
+            int sideWaysMovesLimit = 500; // Adjust as desired
             // NOTE: Has severe problems with n > 9 boards
             int numResets = 0; // Keep track of the number of times you reset
             while(!isSolution(current.state)) {
@@ -305,9 +322,9 @@ public class NQueens {
                     }
                 }
                 // What do we do if no children provide improvements or sideways? Reset!
-                // (currently uses infinite sideways moves, want to make it reset
-                // after a certain number)
                 if (bestHeuristic > current.heuristicVal) {
+                    // TODO: Need Sim Annealing to avoid
+                    // getting stuck, (if that is allowed)
                     current = root;
                     // Starting from scratch instead of current = root might be better,
                     // but needs testing with a set board state for time:

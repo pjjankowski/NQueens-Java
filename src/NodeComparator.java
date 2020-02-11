@@ -11,7 +11,15 @@ public class NodeComparator implements Comparator<Node<Queen[]>> {
         if (heurCompare > 0) {
             return 1;
         } else if (heurCompare == 0) {
-            return 0;
+            // Potential improvement: prioritize immediate solutions
+            // over later ones in the PQ
+            if (arg0.heuristicVal == 0) {
+                return -1;
+            } else if (arg1.heuristicVal == 0) {
+                return 1;
+            } else {
+                return 0;
+            }
         } else {
             return -1;
         }

@@ -14,12 +14,12 @@ public class Queen {
     	if(usurper.equals(this)) { // stop hitting yourself!
     		return false;
     	}
-    	// check row and col
-    	if(usurper.row == this.row || usurper.column == this.column) {
+    	// check row, no need for column since all cols have 1 queen only
+    	if(usurper.row == this.row) {
     		return true;
     	}
     	// check diagonal
-    	if(usurper.row - this.row == usurper.column - this.column) {
+    	if(Math.abs(usurper.row - this.row) == Math.abs(usurper.column - this.column)) {
     		return true;
     	}
     	// else
