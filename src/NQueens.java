@@ -253,6 +253,12 @@ public class NQueens {
             // Perform A* with backtracking if needed
             // First make a priority queue and fill it with all unexpanded nodes that
             // we've found as we go, (at start, just the root node's children)
+
+            // TODO idea: keep track of states that have been in the PQ so far.
+            // if a new node is to be added, check if its state is new.
+            // if its state is new, add it to the PQ.
+            // if its state is not new, then choose the better one to be in
+            // the PQ
             PriorityQueue<Node<Queen[]>> nodeQueue = new PriorityQueue<Node<Queen[]>>(new NodeComparator());
             // Add the starting node to the PQ
             //nodeQueue.add(current);
@@ -273,7 +279,8 @@ public class NQueens {
                         totalNodesExpanded++;
                     }
                     for (Node<Queen[]> e: current.children) {
-                        nodeQueue.add(e);
+                            // Add the node to the PQ
+                            nodeQueue.add(e);
                     }
                     Node<Queen[]> test2 = nodeQueue.remove();
                     current = test2;
