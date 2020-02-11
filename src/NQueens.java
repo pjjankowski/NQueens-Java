@@ -172,7 +172,7 @@ public class NQueens {
 
     // Expand the current node's state by moving ANY queen, and generate successor states, adding them
     // to the node's list of children, if the current node has not already been expanded yet
-    // OPTIMIZATION TODO: MAKE IT SO CHILDREN CANT MOVE THE SAME QUEEN AS THEIR
+    // OPTIMIZATION: MAKE IT SO CHILDREN CANT MOVE THE SAME QUEEN AS THEIR
     // PARENT, AS THOSE MOVES WON'T HELP THINGS AT ALL, (if they are better,
     // then their parent has already expanded a child that has that better option)
     // Want to find ways to restrict expansion and minimize b as much as
@@ -248,9 +248,8 @@ public class NQueens {
         if (searchType == 1) {
             // TODO
             // Note so far: The PQ successfully orders and retrieves each
-            // node by costAccumulated + heuristic, but the problem is that
-            // it has no preference for solutions of the same cost to
-            // random configurations of the same cost + heuristic value.
+            // node by costAccumulated + heuristic, but there are too many
+            // nodes to deal with efficiently with h1 and h2.
             // Perform A* with backtracking if needed
             // First make a priority queue and fill it with all unexpanded nodes that
             // we've found as we go, (at start, just the root node's children)
@@ -285,16 +284,14 @@ public class NQueens {
                     moves++;
                 }
             }
-            // Each node will be given a score based on the cost to get to it
+            // Each node is given a score based on the cost to get to it
             // and the heuristic value of its state
             // Score = heuristic value + cost to get here,
             // choose node with lowest score to expand next
-
         }
 
         else { //(searchType == 2)
-            // NOTE: h2 appears to need simulated annealing,
-            // can also try adding it for h1
+            // NOTE: Appears to need sim annealing, or gets stuck sometimes
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             int sideWaysMoves = 0; // Reset after a certain # of sideways moves
             int sideWaysMovesLimit = 500; // Adjust as desired
