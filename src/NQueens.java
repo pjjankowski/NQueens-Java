@@ -8,6 +8,7 @@
 // 3. TODO Retrofit to work with Queen.java class and 1D array of queens
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
 
@@ -258,9 +259,24 @@ public class NQueens {
             // if a new node is to be added, check if its state is new.
             // if its state is new, add it to the PQ.
             // if its state is not new, then choose the better one to be in
-            // the PQ
+            // the PQ.
+            // this way, process all states exactly once, and never see them again
             PriorityQueue<Node<Queen[]>> nodeQueue = new PriorityQueue<Node<Queen[]>>(new NodeComparator());
-            // Add the starting node to the PQ
+            ArrayList<Queen[]> statesAdded = new ArrayList<Queen[]>();
+            // Any solution that wraps back to the starting state should be ignored
+            statesAdded.add(current.state);
+            /*Queen[] testarr = new Queen[current.state.length];
+            for (int i = 0; i < testarr.length; i++) {
+                testarr[i] = new Queen(current.state[i]);
+            }
+            if (statesAdded.contains(current.state)) {
+                System.out.println("GOOD");
+                System.out.println(statesAdded.contains(testarr));
+                for (Queen[] e: statesAdded) {
+                    System.out.println(Arrays.deepEquals(e, testarr));
+                }
+            }*/
+            // Don't add the starting node to the PQ
             //nodeQueue.add(current);
             int moves = 0;
             while (!nodeQueue.isEmpty() || moves == 0) {
@@ -279,8 +295,42 @@ public class NQueens {
                         totalNodesExpanded++;
                     }
                     for (Node<Queen[]> e: current.children) {
-                            // Add the node to the PQ
+                        // Add the node to the PQ
+                        // if its state has never been in the PQ before,
+                        // or if it is better than the node with its state
+                        // that is in the PQ
+                        // First see if the next child to add has had its state added before
+                        boolean found = false;
+                        for (Queen[] g : statesAdded) {
+                            if (found) {
+                                break;
+                            }
+                            if (Arrays.deepEquals(e.state, g)) {
+                                found = true;
+                                // This state has been added to the PQ before, so see where/if it is
+                                // currently in the PQ
+                                for (Node<Queen[]> f: nodeQueue) {
+                                    if (f.state.equals(e.state)) {
+                                        int oldVal = f.costAccumulated + f.heuristicVal;
+                                        int newVal = e.costAccumulated + f.heuristicVal;
+                                        if (newVal < oldVal) {
+                                            nodeQueue.remove(f);
+                                            nodeQueue.add(e);
+                                            break;
+                                        } else {
+                                            // You know the state is in the queue,
+                                            // but its already better value than
+                                            // what you have here
+                                            break;
+                                        }
+                                        }
+                                    }
+                                }
+                            }
+                        if (!found) {
+                            statesAdded.add(e.state);
                             nodeQueue.add(e);
+                        }
                     }
                     Node<Queen[]> test2 = nodeQueue.remove();
                     current = test2;
