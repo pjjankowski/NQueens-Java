@@ -222,7 +222,7 @@ public class NQueens {
         String line = ""; // The current line of the file being read
         // First, get the path of the file, (assuming it is in
         // the src folder for this project)
-        File filePath = new File("./src/" + fileName).getAbsoluteFile();
+        File filePath = new File("./src//" + fileName).getAbsoluteFile();
 
         // Use java.io.BufferedReader to read in the file
         try {
