@@ -7,6 +7,11 @@
 // 2. We want heuristic functions for h1 and h2.
 // 3. TODO Retrofit to work with Queen.java class and 1D array of queens
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PriorityQueue;
@@ -209,11 +214,68 @@ public class NQueens {
         return currentNode;
     }
 
+    // Read in a csv file and generate the array for the starting board
+    // state from it
+    public static Queen[] readQueenFile(String fileName) {
+
+        BufferedReader reader = null;
+        String line = ""; // The current line of the file being read
+        // First, get the path of the file, (assuming it is in
+        // the src folder for this project)
+        File filePath = new File("./src/" + fileName).getAbsoluteFile();
+
+        // Use java.io.BufferedReader to read in the file
+        try {
+            reader = new BufferedReader(new FileReader(filePath));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        // Now read in lines from the file until it runs out,
+        // adding queens you see to a list
+        ArrayList<Queen> queens = new ArrayList<Queen>();
+        int linesRead = 0;
+        try {
+            while ((line = reader.readLine()) != null) {
+                // Use comma as separator for csv files
+                String[] boardAsString = line.split(",");
+                int lineLength = boardAsString.length;
+                for (int i = 0; i < lineLength; i++) {
+                    try {
+                        // See if the current space is a queen
+                        Integer.parseInt(boardAsString[i]);
+                        queens.add(new Queen(linesRead, i, Integer.parseInt(boardAsString[i])));
+                    } catch (NumberFormatException e) {
+                        // This space is not a queen, so ignore it
+                    }
+                }
+                linesRead++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Now that you have all of the queens in a list,
+        // just make an array where index = column for each queen
+        Queen[] board = new Queen[queens.size()];
+        for (int i = 0; i < board.length; i++) {
+            for (Queen e: queens) {
+                if (e.column == i) {
+                    board[i] = new Queen(e);
+                    break;
+                }
+            }
+        }
+        // Print the starting configuration for the user
+        System.out.println("Starting board state:");
+        printBoard(board);
+        return board;
+    }
+
     public static void main(String[] args) {
         // Start the timer right away
         long startTime = System.nanoTime();
         // Input parameters
-        int numQueens = Integer.parseInt(args[0]);
+        String boardFile = args[0];
+        //int numQueens = Integer.parseInt(args[0]);
         int searchType = Integer.parseInt(args[1]); // 1 for A*, 2 for greedy
         String heuristic = args[2]; // Either h1 or h2
         int totalNodesExpanded = 0; // Increment every time we compute heuristic values for the board
@@ -221,16 +283,13 @@ public class NQueens {
         // Generate a start state based on the number of queens entered,
         // each queen starts in their own column, and a random row
         // # = queen, * = empty
-        Queen[] state = generateStart(numQueens);
+        Queen[] state = readQueenFile(boardFile);
+        //Queen[] state = generateStart(numQueens);
         // Save a copy of the start state for later
         Queen[] startState = new Queen[state.length];
         for (int j = 0; j < state.length; j++) {
             startState[j] = new Queen(state[j]);
         }
-
-        // Print the starting configuration for the user
-        System.out.println("Starting board state:");
-        printBoard(state);
 
         // Test to show hCurrent is working
         int test = hCurrent(state, heuristic);
@@ -265,17 +324,6 @@ public class NQueens {
             ArrayList<Queen[]> statesAdded = new ArrayList<Queen[]>();
             // Any solution that wraps back to the starting state should be ignored
             statesAdded.add(current.state);
-            /*Queen[] testarr = new Queen[current.state.length];
-            for (int i = 0; i < testarr.length; i++) {
-                testarr[i] = new Queen(current.state[i]);
-            }
-            if (statesAdded.contains(current.state)) {
-                System.out.println("GOOD");
-                System.out.println(statesAdded.contains(testarr));
-                for (Queen[] e: statesAdded) {
-                    System.out.println(Arrays.deepEquals(e, testarr));
-                }
-            }*/
             // Don't add the starting node to the PQ
             //nodeQueue.add(current);
             int moves = 0;
@@ -284,7 +332,13 @@ public class NQueens {
                     // TODO
                     // Continue checking if any nodes are left in the pq that
                     // can be better
-                    // Print out the info like time, and path from start to end states
+                    // Print out info once the solution is found
+                    long estimatedTime = System.nanoTime() - startTime;
+                    double timeInSeconds = estimatedTime;
+                    timeInSeconds = timeInSeconds / 1000000000;
+                    System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                    System.out.println("Total Cost: " + current.costAccumulated);
+                    System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                     nodeQueue.clear();
                 } else {
                     // Generate current's children, then add them to the queue
