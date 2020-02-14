@@ -100,13 +100,13 @@ public class NQueens {
         return attackers;
     }
 
-    // For H1 and H2: Returns the value for the heuristic value for a given state
+    // For H1, H2, H3: Returns the value for the heuristic value for a given state
     public static int hCurrent(Queen[] state, String heuristic) {
         if (heuristic.equals("h1")) {
             int lowestWeight = 82;
             int bestIndex = -1;
-            // Start weight off as 10 to take the first attacked queen you see
-            // If the weight stays as 10, no queens are attacked
+            // Start weight off as 82 to take the first attacked queen you see
+            // If the weight stays as 82, no queens are attacked
             for (int i = 0; i < state.length; i++) {
                 // Note: May want to add randomness to pick queen of equal cost to best or not
                 // or pick the most attacked queen out of the lightest
@@ -124,7 +124,7 @@ public class NQueens {
                 // There are no moves left to make, you are at a solution already!
                 return 0;
             }
-        } else { // H2: ----------------------------------------------------------------------
+        } else if (heuristic.equals("h2")) { // H2: ----------------------------------------------------------------------
         	int sumOfLightestQueens = 0;
         	/*
         	 * For each queen on the board:
@@ -144,6 +144,61 @@ public class NQueens {
 	        	}
         	}
         	return sumOfLightestQueens;
+        } else { // H3: Either the lightest attacked queen ^ 2 * distance to nearest
+                 // empty row, or if lightest attacked queen has no empty row,
+                 // the two lightest attacked queens
+                 //
+            int lowestWeight = 10;
+            int bestIndex = -1;
+            // Start weight off as 10 to take the first attacked queen you see
+            // If the weight stays as 10, no queens are attacked
+            boolean[] rowTaken = new boolean[state.length];
+            int rowsTaken = 0;
+            for (int i = 0; i < state.length; i++) {
+                // Note: May want to add randomness to pick queen of equal cost to best or not
+                // or pick the most attacked queen out of the lightest
+                // If this queen is lighter than previous best, and is attacked, take it as best so far
+                int queenVal = state[i].weight;
+                if (rowTaken[i] == false) {
+                    rowsTaken++;
+                }
+                rowTaken[state[i].row] = true;
+                if (queenVal < lowestWeight) {
+                    if (isAttacked(i, state)) {
+                        bestIndex = i;
+                        lowestWeight = queenVal; // The weight of the lowest cost queen so far
+                    }
+                }
+            } if (bestIndex > -1) {
+                // If all rows are taken, just take h1 + 1, since you need
+                // at least two moves
+                if (rowsTaken == state.length) {
+                    return 1 + (lowestWeight * lowestWeight);
+                }
+                // Otherwise, find the lightest queen with the least cost to get to an empty row
+                int leastDistance = state.length + 1;
+                // Shortcut: All nodes before bestIndex have a higher weight,
+                // no need to check them
+                for (int i = bestIndex; i < state.length; i++) {
+                    if (state[i].weight == lowestWeight) {
+                        for (int j = 0; j < rowTaken.length; j++) {
+                            if (!rowTaken[j]) {
+                                int distance = Math.abs(state[i].row - j);
+                                if (distance < leastDistance) {
+                                    leastDistance = distance;
+                                    if (leastDistance == 1) {
+                                        return lowestWeight * lowestWeight;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                return leastDistance * lowestWeight * lowestWeight;
+            } else {
+                // There are no moves left to make, you are at a solution already!
+                return 0;
+            }
         }
     }
 
