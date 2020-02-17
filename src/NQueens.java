@@ -1,11 +1,11 @@
 // The N Queens problem, using A* and greedy search
 
-// NOTES SO FAR:
-// 1. We want a node class that stores a board state in it, that we can use to construct our tree,
-// especially for A*, where we'll be expected to check back and test any nodes that could be better.
-// Each node should store its board state and the cost to get to the node from the root.
-// 2. We want heuristic functions for h1 and h2.
-// 3. TODO Retrofit to work with Queen.java class and 1D array of queens
+// List of things left TODO:
+// 1. Simulated Annealing
+// 2. Print final output path, as well as effective branching factor (DONE except for sim anneal)
+// 3. Sideways moves limited consecutively, not cumulatively (DONE)
+// 4. Stop hill climb after 10s, (DONE FOR SIDEWAYS, NOT SIM ANNEAL)
+// 5. Writup
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Stack;
 
 public class NQueens {
 
@@ -33,6 +34,36 @@ public class NQueens {
             state[i] = new Queen(rowNum, i, queenWeight);
         }
         return state;
+    }
+
+    // Prints the path from the root node to a given node
+    // Returns the depth of the solution
+    public static int pathTo(Node<Queen[]> end) {
+        int depth = 0;
+        Node<Queen[]> current = end;
+        Stack<Node<Queen[]>> moveStack = new Stack<Node<Queen[]>>();
+        // Backtrack up to the root
+        while (current.parent != null) {
+            depth++;
+            moveStack.add(current);
+            current = current.parent;
+        }
+        System.out.println("The starting board state is: ");
+        printBoard(current.state);
+        System.out.println("The sequence of moves to the end state is as follows:");
+        // Now, print out the boards from root to end
+        Queen[] state = current.state;
+        while(!moveStack.empty()) {
+            System.out.println("The next board state is:");
+            state = moveStack.pop().state;
+            printBoard(state);
+        }
+        if (isSolution(state)) {
+            System.out.println("The final state in the path is a solution.");
+        } else {
+            System.out.println("No solution was found.");
+        }
+        return depth;
     }
 
     // Prints the given state
@@ -147,7 +178,6 @@ public class NQueens {
         } else { // H3: Either the lightest attacked queen ^ 2 * distance to nearest
                  // empty row, or if lightest attacked queen has no empty row,
                  // the two lightest attacked queens
-                 //
             int lowestWeight = 10;
             int bestIndex = -1;
             // Start weight off as 10 to take the first attacked queen you see
@@ -320,9 +350,148 @@ public class NQueens {
             }
         }
         // Print the starting configuration for the user
-        System.out.println("Starting board state:");
-        printBoard(board);
+        //System.out.println("Starting board state:");
+        //printBoard(board);
         return board;
+    }
+
+    // Greedy hill climbing with simulated annealing
+    // Instead of always taking the best move, pick a move at random and
+    // take it with a probability
+    public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+        //TODO: Implement simulated annealing
+    }
+
+    // Do greedy hill climbing with sideways moves
+    public static void sideWays(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+     // NOTE: Appears to need sim annealing, or gets stuck sometimes
+        // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
+        int sideWaysMoves = 0; // Reset after a certain # of sideways moves
+        int sideWaysMovesLimit = 0; // Adjust as desired
+        // NOTE: Has severe problems with n > 9 boards
+        int numResets = 0; // Keep track of the number of times you reset
+        while(!isSolution(current.state)) {
+            // First expand current node, then pick from best children
+            // Next we expand the current node, (add all possible successors as children based on heuristic)
+            int prevChildren = current.children.size();
+            Node<Queen[]> expanded = hExpand(current, heuristic);
+            if (expanded.children.size() > prevChildren) {
+                totalNodesExpanded++;
+            }
+            // Now we look at each of the children of the current state that have been generated and
+            // pick one at random to use next based on what has the best heuristic, ignoring cost
+            int bestHeuristic = -1;
+            ArrayList<Node<Queen[]>> options = new ArrayList<Node<Queen[]>>();
+            for (Node<Queen[]> e: current.children) {
+                if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
+                    bestHeuristic = e.heuristicVal;
+                    options = new ArrayList<Node<Queen[]>>();
+                    options.add(e);
+                } else if (e.heuristicVal == bestHeuristic) {
+                    options.add(e);
+                }
+            }
+            // What do we do if no children provide improvements or sideways? Reset!
+            if (bestHeuristic > current.heuristicVal) {
+                long estimatedTime = System.nanoTime() - startTime;
+                double timeInSeconds = estimatedTime;
+                timeInSeconds = timeInSeconds / 1000000000;
+                if (timeInSeconds < 10) {
+                    current = root;
+                    //System.out.println("Resetting, no improvements!");
+                    sideWaysMoves = 0;
+                    numResets++;
+                } else {
+                    // A solution is not found after 10s. Print out some info:
+                    // Nodes expanded and time are across all restarts,
+                    // costAccumulated is only for the path that we end up with
+                    int depth = pathTo(current);
+                    System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                    if (depth == 0) {
+                        System.out.println("Effective branching factor = 0, the start state was a solution.");
+                    } else {
+                        double b = ((double)totalNodesExpanded / (double)depth);
+                        System.out.println("Effective branching factor = " + b);
+                    }
+                    System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                    System.out.println("Total Cost: " + current.costAccumulated);
+                    System.out.println("Resets: " + numResets);
+                }
+            } else {
+                int pastResets = numResets;
+                // When making a sideways move,
+                // see if it violates the limit for sideways moves or not
+                if (bestHeuristic == current.heuristicVal) {
+                    sideWaysMoves++;
+                    if (sideWaysMoves > sideWaysMovesLimit) {
+                        long estimatedTime = System.nanoTime() - startTime;
+                        double timeInSeconds = estimatedTime;
+                        timeInSeconds = timeInSeconds / 1000000000;
+                        if (timeInSeconds < 10) {
+                            current = root;
+                            //System.out.println("Resetting, too many sideways!");
+                            sideWaysMoves = 0;
+                            numResets++;
+                        } else {
+                            // A solution is not found after 10s. Print out some info:
+                            // Nodes expanded and time are across all restarts,
+                            // costAccumulated is only for the path that we end up with
+                            int depth = pathTo(current);
+                            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                            if (depth == 0) {
+                                System.out.println("Effective branching factor = 0, the start state was a solution.");
+                            } else {
+                                double b = ((double)totalNodesExpanded / (double)depth);
+                                System.out.println("Effective branching factor = " + b);
+                            }
+                            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                            System.out.println("Total Cost: " + current.costAccumulated);
+                            System.out.println("Resets: " + numResets);
+                        }
+                    }
+                } else { // We've made an improvement, so reset the tolerance
+                    // for sideways moves
+                    sideWaysMoves = 0;
+                }
+                // If we did not just reset from too many sideways moves,
+                // make a move
+                if (pastResets == numResets) {
+                    // Now that we have a list of best possible children that are better,
+                    // pick one at random for the next looping
+                    int choice = options.size();
+                    Random rand = new Random();
+                    // NOTE: DOES NOT NECESSARILY PICK OPTIONS
+                    // THAT IMPROVE IF THEY HAVE SAME H VALUE
+                    // AS ONES THAT DONT, (if 4 is attacked at minimum
+                    // no matter what, it can pick a move that does not
+                    // help immediately even if one exists)
+                    choice = rand.nextInt(choice);
+                    current = options.get(choice);
+                    // Print current board state to see what happens
+                    /*System.out.println("Current board state:");
+                    printBoard(current.state);
+                    test = hCurrent(current.state, heuristic);
+                    System.out.println(test);*/
+                    }
+                }
+        }
+        long estimatedTime = System.nanoTime() - startTime;
+        double timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        // A solution is found! Print out some info:
+        // Nodes expanded and time are across all restarts,
+        // costAccumulated is only for the path that we end up with
+        int depth = pathTo(current);
+        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+        if (depth == 0) {
+            System.out.println("Effective branching factor = 0, the start state was a solution.");
+        } else {
+            double b = ((double)totalNodesExpanded / (double)depth);
+            System.out.println("Effective branching factor = " + b);
+        }
+        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+        System.out.println("Total Cost: " + current.costAccumulated);
+        System.out.println("Resets: " + numResets);
     }
 
     public static void main(String[] args) {
@@ -347,8 +516,8 @@ public class NQueens {
         }
 
         // Test to show hCurrent is working
-        int test = hCurrent(state, heuristic);
-        System.out.println(test);
+        //int test = hCurrent(state, heuristic);
+        //System.out.println("Starting board heuristic value: " + test);
 
         // Now, make the root node for reference later if you must reset
         Node<Queen[]> root = new Node<Queen[]>(state);
@@ -361,20 +530,12 @@ public class NQueens {
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
-            // TODO
             // Note so far: The PQ successfully orders and retrieves each
             // node by costAccumulated + heuristic, but there are too many
-            // nodes to deal with efficiently with h1 and h2.
+            // nodes to deal with efficiently with h1 or h2.
             // Perform A* with backtracking if needed
             // First make a priority queue and fill it with all unexpanded nodes that
             // we've found as we go, (at start, just the root node's children)
-
-            // TODO idea: keep track of states that have been in the PQ so far.
-            // if a new node is to be added, check if its state is new.
-            // if its state is new, add it to the PQ.
-            // if its state is not new, then choose the better one to be in
-            // the PQ.
-            // this way, process all states exactly once, and never see them again
             PriorityQueue<Node<Queen[]>> nodeQueue = new PriorityQueue<Node<Queen[]>>(new NodeComparator());
             ArrayList<Queen[]> statesAdded = new ArrayList<Queen[]>();
             // Any solution that wraps back to the starting state should be ignored
@@ -384,16 +545,23 @@ public class NQueens {
             int moves = 0;
             while (!nodeQueue.isEmpty() || moves == 0) {
                 if (isSolution(current.state)) {
-                    // TODO
                     // Continue checking if any nodes are left in the pq that
                     // can be better
                     // Print out info once the solution is found
                     long estimatedTime = System.nanoTime() - startTime;
                     double timeInSeconds = estimatedTime;
                     timeInSeconds = timeInSeconds / 1000000000;
+                    System.out.println("Solution Found:");
+                    int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                    System.out.println("Total Cost: " + current.costAccumulated);
+                    if (depth == 0) {
+                        System.out.println("Effective branching factor = 0, the start state was a solution.");
+                    } else {
+                        double b = ((double)totalNodesExpanded / (double)depth);
+                        System.out.println("Effective branching factor = " + b);
+                    }
                     System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                    System.out.println("Total Cost: " + current.costAccumulated);
                     nodeQueue.clear();
                 } else {
                     // Generate current's children, then add them to the queue
@@ -443,10 +611,10 @@ public class NQueens {
                     }
                     Node<Queen[]> test2 = nodeQueue.remove();
                     current = test2;
-                    System.out.println("Current board state:");
+                    /*System.out.println("Current board state:");
                     printBoard(current.state);
                     test = hCurrent(current.state, heuristic);
-                    System.out.println(test + current.costAccumulated);
+                    System.out.println(test + current.costAccumulated);*/
                     moves++;
                 }
             }
@@ -459,93 +627,7 @@ public class NQueens {
         else { //(searchType == 2)
             // NOTE: Appears to need sim annealing, or gets stuck sometimes
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-            int sideWaysMovesLimit = 500; // Adjust as desired
-            // NOTE: Has severe problems with n > 9 boards
-            int numResets = 0; // Keep track of the number of times you reset
-            while(!isSolution(current.state)) {
-                // First expand current node, then pick from best children
-                // Next we expand the current node, (add all possible successors as children based on heuristic)
-                int prevChildren = current.children.size();
-                Node<Queen[]> expanded = hExpand(current, heuristic);
-                if (expanded.children.size() > prevChildren) {
-                    totalNodesExpanded++;
-                }
-                // Now we look at each of the children of the current state that have been generated and
-                // pick one at random to use next based on what has the best heuristic, ignoring cost
-                int bestHeuristic = -1;
-                ArrayList<Node<Queen[]>> options = new ArrayList<Node<Queen[]>>();
-                for (Node<Queen[]> e: current.children) {
-                    if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
-                        bestHeuristic = e.heuristicVal;
-                        options = new ArrayList<Node<Queen[]>>();
-                        options.add(e);
-                    } else if (e.heuristicVal == bestHeuristic) {
-                        options.add(e);
-                    }
-                }
-                // What do we do if no children provide improvements or sideways? Reset!
-                if (bestHeuristic > current.heuristicVal) {
-                    // TODO: Need Sim Annealing to avoid
-                    // getting stuck, (if that is allowed)
-                    current = root;
-                    // Starting from scratch instead of current = root might be better,
-                    // but needs testing with a set board state for time:
-                    //current = new Node<Queen[]>(state);
-                    //current.heuristicVal = hCurrent(state, heuristic);
-                    System.out.println("Resetting!");
-                    sideWaysMoves = 0;
-                    numResets++;
-                } else {
-                    int pastResets = numResets;
-                    // When making a sideways move,
-                    // see if it violates the limit for sideways moves or not
-                    if (bestHeuristic == current.heuristicVal) {
-                        sideWaysMoves++;
-                        if (sideWaysMoves > sideWaysMovesLimit) {
-                            current = root;
-                            //current = new Node<Queen[]>(state);
-                            //current.heuristicVal = hCurrent(state, heuristic);
-                            System.out.println("Resetting!");
-                            sideWaysMoves = 0;
-                            numResets++;
-                        }
-                    } else { // We've made an improvement, so reset the tolerance
-                        // for sideways moves
-                        sideWaysMoves = 0;
-                    }
-                    // If we did not just reset from too many sideways moves,
-                    // make a move
-                    if (pastResets == numResets) {
-                        // Now that we have a list of best possible children that are better,
-                        // pick one at random for the next looping
-                        int choice = options.size();
-                        Random rand = new Random();
-                        // NOTE: DOES NOT NECESSARILY PICK OPTIONS
-                        // THAT IMPROVE IF THEY HAVE SAME H VALUE
-                        // AS ONES THAT DONT, (if 4 is attacked at minimum
-                        // no matter what, it can pick a move that does not
-                        // help immediately even if one exists)
-                        choice = rand.nextInt(choice);
-                        current = options.get(choice);
-                        // Print current board state to see what happens
-                        System.out.println("Current board state:");
-                        printBoard(current.state);
-                        test = hCurrent(current.state, heuristic);
-                        System.out.println(test);
-                        }
-                    }
-            }
-            long estimatedTime = System.nanoTime() - startTime;
-            double timeInSeconds = estimatedTime;
-            timeInSeconds = timeInSeconds / 1000000000;
-            // A solution is found! Print out some info:
-            // Nodes expanded and time are across all restarts,
-            // costAccumulated is only for the path that we end up with
-            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-            System.out.println("Total Cost: " + current.costAccumulated);
-            System.out.println("Resets: " + numResets);
-            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            sideWays(totalNodesExpanded, startTime, heuristic, root);
         }
     }
 }
