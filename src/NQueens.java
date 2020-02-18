@@ -360,6 +360,138 @@ public class NQueens {
     // take it with a probability
     public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         //TODO: Implement simulated annealing
+        // ASK: DO WE TAKE A BETTER MOVE IF ONE EXISTS
+        // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER?
+        // May want to introduce resets if temp gets too low,
+        // and a reroll limit
+        int timeStep = 1;
+        int numResets = 0;
+        double currentTemp = 50;
+        double startingTemp = 50;
+        // For geo, test with annealing constant 0.9 first
+        double annealingConstant = 0.9;
+        // For log, test with annealing constant 2 first
+        while(!isSolution(current.state)) {
+            // First check if time has run out
+            long estimatedTime = System.nanoTime() - startTime;
+            double timeInSeconds = estimatedTime;
+            timeInSeconds = timeInSeconds / 1000000000;
+            if (timeInSeconds > 1000000) {
+                // A solution has not been found in 10 seconds
+                int depth = pathTo(current);
+                System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                if (depth == 0) {
+                    System.out.println("Effective branching factor = 0, did not pass start state");
+                } else {
+                    double b = ((double)totalNodesExpanded / (double)depth);
+                    System.out.println("Effective branching factor = " + b);
+                }
+                System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                System.out.println("Total Cost: " + current.costAccumulated);
+                //System.out.println("Resets: " + numResets);
+                break;
+            } else {
+                // Expand current node, then pick from best children
+                // Next we expand the current node, (add all possible successors as children based on heuristic)
+                int prevChildren = current.children.size();
+                Node<Queen[]> expanded = hExpand(current, heuristic);
+                if (expanded.children.size() > prevChildren) {
+                    totalNodesExpanded++;
+                }
+                // Now, we pick a successor option at random out of all possible children,
+                // UNLESS ONE IS AN IMMEDIATE SOLUTION,
+                // (skipping a solution this way would make no sense)
+                for (Node<Queen[]> e: current.children) {
+                    if (isSolution(e.state)) {
+                        current = e;
+                        timeStep++;
+                        // Geometric version:
+                        currentTemp = currentTemp * annealingConstant;
+                        // Log version:
+                        // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                        // Found a solution:
+                        estimatedTime = System.nanoTime() - startTime;
+                        timeInSeconds = estimatedTime;
+                        timeInSeconds = timeInSeconds / 1000000000;
+                        int depth = pathTo(current);
+                        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                        if (depth == 0) {
+                            System.out.println("Effective branching factor = 0, the start state was a solution.");
+                        } else {
+                            double b = ((double)totalNodesExpanded / (double)depth);
+                            System.out.println("Effective branching factor = " + b);
+                        }
+                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                        System.out.println("Total Cost: " + current.costAccumulated);
+                        //System.out.println("Resets: " + numResets);
+                        return;
+                    }
+                }
+                // Now that we are sure there are no immediate solutions, pick
+                // a successor at random until one passes the temperature formula
+                Random rand = new Random();
+                int size = current.children.size();
+                int choice = rand.nextInt(size);
+                boolean successorPassed = false;
+                // If successor is immediately better, pick it.
+                // Otherwise, see if it passes the random formula
+                while (!successorPassed) {
+                    Node<Queen[]> successor = current.children.get(choice);
+                    if (successor.heuristicVal >= current.heuristicVal) {
+                        successorPassed = true;
+                        current = successor;
+                        timeStep++;
+                        // Geometric version:
+                        currentTemp = currentTemp * annealingConstant;
+                        // Log version:
+                        // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                        System.out.println("Current board state:");
+                        printBoard(current.state);
+                        int test = hCurrent(current.state, heuristic);
+                        System.out.println(test);
+                    } else {
+                        double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
+                        double probability = Math.pow(Math.E, power);
+                        double probToBeat = rand.nextDouble();
+                        if (probToBeat <= probability) {
+                            // Keep this one
+                            successorPassed = true;
+                            current = successor;
+                            timeStep++;
+                            // Geometric version:
+                            currentTemp = currentTemp * annealingConstant;
+                            // Log version:
+                            // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                            // Print current board state to see what happens
+                            System.out.println("Current board state:");
+                            printBoard(current.state);
+                            int test = hCurrent(current.state, heuristic);
+                            System.out.println(test);
+                        } else {
+                            // Pick another successor
+                            choice = rand.nextInt(size);
+                            System.out.println("Rerolling " + probToBeat + "  " + probability + "  " + power);
+                        }
+                        // Need to implement geometric and log formulas to test
+                    }
+                }
+            }
+        }
+        // Found a solution:
+        long estimatedTime = System.nanoTime() - startTime;
+        double timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        int depth = pathTo(current);
+        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+        if (depth == 0) {
+            System.out.println("Effective branching factor = 0, the start state was a solution.");
+        } else {
+            double b = ((double)totalNodesExpanded / (double)depth);
+            System.out.println("Effective branching factor = " + b);
+        }
+        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+        System.out.println("Total Cost: " + current.costAccumulated);
+        //System.out.println("Resets: " + numResets);
     }
 
     // Do greedy hill climbing with sideways moves
@@ -408,7 +540,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, the start state was a solution.");
+                        System.out.println("Effective branching factor = 0, did not pass start state");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
@@ -439,7 +571,7 @@ public class NQueens {
                             int depth = pathTo(current);
                             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                             if (depth == 0) {
-                                System.out.println("Effective branching factor = 0, the start state was a solution.");
+                                System.out.println("Effective branching factor = 0, did not pass start state.");
                             } else {
                                 double b = ((double)totalNodesExpanded / (double)depth);
                                 System.out.println("Effective branching factor = " + b);
@@ -627,7 +759,8 @@ public class NQueens {
         else { //(searchType == 2)
             // NOTE: Appears to need sim annealing, or gets stuck sometimes
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            sideWays(totalNodesExpanded, startTime, heuristic, root);
+            //sideWays(totalNodesExpanded, startTime, heuristic, root);
+            simAnneal(totalNodesExpanded, startTime, heuristic, root);
         }
     }
 }
