@@ -665,7 +665,8 @@ public class NQueens {
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
-            // TODO: ASK if A* should run under 10s
+            // TODO: ASK if A* should run under 10s,
+            // AND ABOUT 1/2 of max size boards
             // Note so far: The PQ successfully orders and retrieves each
             // node by costAccumulated + heuristic, but there are too many
             // nodes to deal with efficiently with h1 or h2.
