@@ -362,8 +362,7 @@ public class NQueens {
         //TODO: Implement simulated annealing
         // ASK: DO WE TAKE A BETTER MOVE IF ONE EXISTS
         // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER?
-        // May want to introduce resets if temp gets too low,
-        // and a reroll limit
+        // ASK: May want to introduce resets if too many consecutive rerolls
         int timeStep = 1;
         int numResets = 0;
         double currentTemp = 50;
@@ -408,7 +407,7 @@ public class NQueens {
                         // Geometric version:
                         currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                        //currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
                         // Found a solution:
                         estimatedTime = System.nanoTime() - startTime;
                         timeInSeconds = estimatedTime;
@@ -444,7 +443,7 @@ public class NQueens {
                         // Geometric version:
                         currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                        // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
                         System.out.println("Current board state:");
                         printBoard(current.state);
                         int test = hCurrent(current.state, heuristic);
@@ -461,7 +460,7 @@ public class NQueens {
                             // Geometric version:
                             currentTemp = currentTemp * annealingConstant;
                             // Log version:
-                            // currentTemp = startingTemp / log(timeStep + annealingConstant);
+                            // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
                             // Print current board state to see what happens
                             System.out.println("Current board state:");
                             printBoard(current.state);
@@ -496,11 +495,10 @@ public class NQueens {
 
     // Do greedy hill climbing with sideways moves
     public static void sideWays(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
-     // NOTE: Appears to need sim annealing, or gets stuck sometimes
         // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
         int sideWaysMoves = 0; // Reset after a certain # of sideways moves
         int sideWaysMovesLimit = 0; // Adjust as desired
-        // NOTE: Has severe problems with n > 9 boards
+        // NOTE: Has problems with n > 9 boards
         int numResets = 0; // Keep track of the number of times you reset
         while(!isSolution(current.state)) {
             // First expand current node, then pick from best children
@@ -667,6 +665,7 @@ public class NQueens {
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
+            // TODO: ASK if A* should run under 10s
             // Note so far: The PQ successfully orders and retrieves each
             // node by costAccumulated + heuristic, but there are too many
             // nodes to deal with efficiently with h1 or h2.
