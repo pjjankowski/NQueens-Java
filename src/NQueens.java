@@ -631,16 +631,21 @@ public class NQueens {
         long startTime = System.nanoTime();
         // Input parameters
         String boardFile = args[0];
-        //int numQueens = Integer.parseInt(args[0]);
+        Queen state[];
+        try {
+            int boardSize = Integer.parseInt(boardFile);
+            // Generate a start state based on the number of queens entered,
+            // each queen starts in their own column, and a random row
+            // # = queen, * = empty
+            state = generateStart(boardSize);
+        } catch (NumberFormatException e) {
+            // Board is a file, not a number for size
+            state = readQueenFile(boardFile);
+        }
         int searchType = Integer.parseInt(args[1]); // 1 for A*, 2 for greedy
         String heuristic = args[2]; // Either h1 or h2
         int totalNodesExpanded = 0; // Increment every time we compute heuristic values for the board
 
-        // Generate a start state based on the number of queens entered,
-        // each queen starts in their own column, and a random row
-        // # = queen, * = empty
-        Queen[] state = readQueenFile(boardFile);
-        //Queen[] state = generateStart(numQueens);
         // Save a copy of the start state for later
         Queen[] startState = new Queen[state.length];
         for (int j = 0; j < state.length; j++) {
