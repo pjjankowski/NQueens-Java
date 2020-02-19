@@ -40,25 +40,25 @@ public class NQueens {
     // Returns the depth of the solution
     public static int pathTo(Node<Queen[]> end) {
         int depth = 0;
-        Node<Queen[]> current = end;
-        Stack<Node<Queen[]>> moveStack = new Stack<Node<Queen[]>>();
-        // Backtrack up to the root
-        while (current.parent != null) {
-            depth++;
-            moveStack.add(current);
-            current = current.parent;
-        }
-        //System.out.println("The starting board state is: ");
-        //printBoard(current.state);
-        System.out.println("The sequence of moves to the end state is as follows:");
-        // Now, print out the boards from root to end
-        Queen[] state = current.state;
-        while(!moveStack.empty()) {
-            System.out.println("The next board state is:");
-            state = moveStack.pop().state;
-            printBoard(state);
-        }
-        if (isSolution(state)) {
+        if (isSolution(end.state)) {
+            Node<Queen[]> current = end;
+            Stack<Node<Queen[]>> moveStack = new Stack<Node<Queen[]>>();
+            // Backtrack up to the root
+            while (current.parent != null) {
+                depth++;
+                moveStack.add(current);
+                current = current.parent;
+            }
+            //System.out.println("The starting board state is: ");
+            //printBoard(current.state);
+            System.out.println("The sequence of moves to the end state is as follows:");
+            // Now, print out the boards from root to end
+            Queen[] state = current.state;
+            while(!moveStack.empty()) {
+                System.out.println("The next board state is:");
+                state = moveStack.pop().state;
+                printBoard(state);
+           }
             System.out.println("The final state in the path is a solution.");
         } else {
             System.out.println("No solution was found in 10s or less.");
@@ -232,35 +232,6 @@ public class NQueens {
         }
     }
 
-    // May want a function for H1 and H2: Returns the coordinates and cost of the best next move, given knowing what queen to move
-
-    // Expand the current node's state by moving only the queen at the given index, and generate successor states, adding them
-    // to the node's list of children, if the current node has not already been expanded yet
-    // NOTE: WE MAY NOT ACTUALLY NEED THIS FUNCTION, AS WE WANT TO EXPAND ALL QUEENS FROM EACH STATE
-    public static Node<Queen[]> hExpand(int currentQueen, Node<Queen[]> currentNode, String heuristic) {
-        if (currentNode.children.size() > 0) {
-            // This node has already been expanded, so no need to do it again.
-            return currentNode;
-        }
-        Queen[] currentState = currentNode.state;
-        int row = currentState[currentQueen].row;
-        int rows = currentState.length;
-        for (int i = 0; i < rows; i++) {
-            if (i != row) {
-                // Clone the old state to a new state, only changing where the queen is located
-                Queen[] newState = new Queen[currentState.length];
-                for (int j = 0; j < newState.length; j++) {
-                    newState[j] = new Queen(currentState[j]);
-                }
-                newState[currentQueen].row = i;
-                int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
-                // Now, make a node that has the new state in it as a child
-                currentNode.addChild(newState, cost, hCurrent(newState, heuristic), currentQueen);
-            }
-        }
-        return currentNode;
-    }
-
     // Expand the current node's state by moving ANY queen, and generate successor states, adding them
     // to the node's list of children, if the current node has not already been expanded yet
     // OPTIMIZATION: MAKE IT SO CHILDREN CANT MOVE THE SAME QUEEN AS THEIR
@@ -378,7 +349,6 @@ public class NQueens {
         double startingTemp = 50;
         int currentRerolls = 0;
         int rerollLimit = 1000;
-        int count = 0;
         // For geo, test with annealing constant 0.9 first
         double annealingConstant = 0.9;
         // For log, test with annealing constant 2 first
@@ -392,7 +362,7 @@ public class NQueens {
                 int depth = pathTo(current);
                 System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                 if (depth == 0) {
-                    System.out.println("Effective branching factor = 0, did not pass start state");
+                    System.out.println("Effective branching factor = 0, did not find a solution path.");
                 } else {
                     double b = ((double)totalNodesExpanded / (double)depth);
                     System.out.println("Effective branching factor = " + b);
@@ -444,7 +414,7 @@ public class NQueens {
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
-                            System.out.println("Effective branching factor = 0, the start state was a solution.");
+                            System.out.println("Effective branching factor = 0, did not find a solution path.");
                         } else {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
@@ -467,13 +437,12 @@ public class NQueens {
                     estimatedTime = System.nanoTime() - startTime;
                     timeInSeconds = estimatedTime;
                     timeInSeconds = timeInSeconds / 1000000000;
-                    System.out.println(timeInSeconds);
                     if (timeInSeconds > 10) {
                         // Did not find a solution:
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
-                            System.out.println("Effective branching factor = 0, the start state was a solution.");
+                            System.out.println("Effective branching factor = 0, did not find a solution path");
                         } else {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
@@ -516,7 +485,7 @@ public class NQueens {
                                 int depth = pathTo(current);
                                 System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                                 if (depth == 0) {
-                                    System.out.println("Effective branching factor = 0, the start state was a solution.");
+                                    System.out.println("Effective branching factor = 0, did not find a solution path.");
                                 } else {
                                     double b = ((double)totalNodesExpanded / (double)depth);
                                     System.out.println("Effective branching factor = " + b);
@@ -607,7 +576,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, current iteration is at start state");
+                        System.out.println("Effective branching factor = 0, no solution path was found.");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
@@ -763,7 +732,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, the start state was a solution.");
+                        System.out.println("Effective branching factor = 0, no solution path found.");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
