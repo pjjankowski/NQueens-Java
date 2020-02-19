@@ -327,10 +327,19 @@ public class NQueens {
                 for (int i = 0; i < lineLength; i++) {
                     try {
                         // See if the current space is a queen
-                        Integer.parseInt(boardAsString[i]);
-                        queens.add(new Queen(linesRead, i, Integer.parseInt(boardAsString[i])));
+                        // NEED TO HANDLE SPECIAL PARSING FOR THE FIRST CHARACTER IN THE CSV FILE,
+                        // SINCE IT HAS AN INVISIBLE CHARACTER AT THE START. IF THIS IS A #,
+                        // JAVA WON'T RECOGNIZE IT AS ONE.
+                        int last = boardAsString[i].length();
+                        if (last > 0) {
+                            char characterToTest = new Character(boardAsString[i].charAt(last - 1));
+                            String target = "" + characterToTest;
+                            queens.add(new Queen(linesRead, i, Integer.parseInt(target)));
+                        }
                     } catch (NumberFormatException e) {
                         // This space is not a queen, so ignore it
+                        // If (0, 0) is blank, should get here due to the invisible
+                        // character starting the csv file
                     }
                 }
                 linesRead++;
