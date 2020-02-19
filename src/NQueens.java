@@ -48,8 +48,8 @@ public class NQueens {
             moveStack.add(current);
             current = current.parent;
         }
-        System.out.println("The starting board state is: ");
-        printBoard(current.state);
+        //System.out.println("The starting board state is: ");
+        //printBoard(current.state);
         System.out.println("The sequence of moves to the end state is as follows:");
         // Now, print out the boards from root to end
         Queen[] state = current.state;
@@ -61,7 +61,7 @@ public class NQueens {
         if (isSolution(state)) {
             System.out.println("The final state in the path is a solution.");
         } else {
-            System.out.println("No solution was found.");
+            System.out.println("No solution was found in 10s or less.");
         }
         return depth;
     }
@@ -361,12 +361,14 @@ public class NQueens {
     public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         //TODO: Implement simulated annealing
         // ASK: DO WE TAKE A BETTER MOVE IF ONE EXISTS
-        // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER?
-        // ASK: May want to introduce resets if too many consecutive rerolls
+        // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER? Not necessarily, test.
+        // Should do resets if too many consecutive rerolls or too low temp
         int timeStep = 1;
         int numResets = 0;
         double currentTemp = 50;
         double startingTemp = 50;
+        int currentRerolls = 0;
+        int rerollLimit = 10;
         // For geo, test with annealing constant 0.9 first
         double annealingConstant = 0.9;
         // For log, test with annealing constant 2 first
@@ -375,7 +377,7 @@ public class NQueens {
             long estimatedTime = System.nanoTime() - startTime;
             double timeInSeconds = estimatedTime;
             timeInSeconds = timeInSeconds / 1000000000;
-            if (timeInSeconds > 1000000) {
+            if (timeInSeconds > 10) {
                 // A solution has not been found in 10 seconds
                 int depth = pathTo(current);
                 System.out.println("Number of nodes expanded: " + totalNodesExpanded);
@@ -387,7 +389,7 @@ public class NQueens {
                 }
                 System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                 System.out.println("Total Cost: " + current.costAccumulated);
-                //System.out.println("Resets: " + numResets);
+                System.out.println("Resets: " + numResets);
                 break;
             } else {
                 // Expand current node, then pick from best children
@@ -422,7 +424,7 @@ public class NQueens {
                         }
                         System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                         System.out.println("Total Cost: " + current.costAccumulated);
-                        //System.out.println("Resets: " + numResets);
+                        System.out.println("Resets: " + numResets);
                         return;
                     }
                 }
@@ -437,6 +439,7 @@ public class NQueens {
                 while (!successorPassed) {
                     Node<Queen[]> successor = current.children.get(choice);
                     if (successor.heuristicVal >= current.heuristicVal) {
+                        currentRerolls = 0;
                         successorPassed = true;
                         current = successor;
                         timeStep++;
@@ -444,15 +447,16 @@ public class NQueens {
                         currentTemp = currentTemp * annealingConstant;
                         // Log version:
                         // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
-                        System.out.println("Current board state:");
-                        printBoard(current.state);
-                        int test = hCurrent(current.state, heuristic);
-                        System.out.println(test);
+                        //System.out.println("Current board state:");
+                        //printBoard(current.state);
+                        //int test = hCurrent(current.state, heuristic);
+                        //System.out.println(test);
                     } else {
                         double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
                         double probability = Math.pow(Math.E, power);
                         double probToBeat = rand.nextDouble();
                         if (probToBeat <= probability) {
+                            currentRerolls = 0;
                             // Keep this one
                             successorPassed = true;
                             current = successor;
@@ -462,16 +466,25 @@ public class NQueens {
                             // Log version:
                             // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
                             // Print current board state to see what happens
-                            System.out.println("Current board state:");
-                            printBoard(current.state);
-                            int test = hCurrent(current.state, heuristic);
-                            System.out.println(test);
+                            //System.out.println("Current board state:");
+                            //printBoard(current.state);
+                            //int test = hCurrent(current.state, heuristic);
+                            //System.out.println(test);
                         } else {
-                            // Pick another successor
-                            choice = rand.nextInt(size);
-                            System.out.println("Rerolling " + probToBeat + "  " + probability + "  " + power);
+                            currentRerolls++;
+                            if (currentRerolls == rerollLimit) {
+                                // Reset due to too many rerolls
+                                numResets++;
+                                current = root;
+                                timeStep = 1;
+                                currentTemp = startingTemp;
+                                successorPassed = true;
+                            } else {
+                                // Pick another successor
+                                choice = rand.nextInt(size);
+                                //System.out.println("Rerolling " + probToBeat + "  " + probability + "  " + power);
+                            }
                         }
-                        // Need to implement geometric and log formulas to test
                     }
                 }
             }
@@ -662,6 +675,9 @@ public class NQueens {
         current = new Node<Queen[]>(state);
         current.heuristicVal = root.heuristicVal;
 
+        System.out.println("The starting board state is: ");
+        printBoard(current.state);
+
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
@@ -681,14 +697,12 @@ public class NQueens {
             //nodeQueue.add(current);
             int moves = 0;
             while (!nodeQueue.isEmpty() || moves == 0) {
-                if (isSolution(current.state)) {
-                    // Continue checking if any nodes are left in the pq that
-                    // can be better
-                    // Print out info once the solution is found
-                    long estimatedTime = System.nanoTime() - startTime;
-                    double timeInSeconds = estimatedTime;
-                    timeInSeconds = timeInSeconds / 1000000000;
-                    System.out.println("Solution Found:");
+                long estimatedTime = System.nanoTime() - startTime;
+                double timeInSeconds = estimatedTime;
+                timeInSeconds = timeInSeconds / 1000000000;
+                if (timeInSeconds > 10) {
+                    // No Solution found in under 10s
+                    System.out.println("Solution Not Found In Under 10s:");
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
@@ -701,58 +715,76 @@ public class NQueens {
                     System.out.println("Total Cost: " + current.costAccumulated);
                     nodeQueue.clear();
                 } else {
-                    // Generate current's children, then add them to the queue
-                    // Next we expand the current node, (add all possible successors as children based on heuristic)
-                    int prevChildren = current.children.size();
-                    Node<Queen[]> expanded = hExpand(current, heuristic);
-                    if (expanded.children.size() > prevChildren) {
-                        totalNodesExpanded++;
-                    }
-                    for (Node<Queen[]> e: current.children) {
-                        // Add the node to the PQ
-                        // if its state has never been in the PQ before,
-                        // or if it is better than the node with its state
-                        // that is in the PQ
-                        // First see if the next child to add has had its state added before
-                        boolean found = false;
-                        for (Queen[] g : statesAdded) {
-                            if (found) {
-                                break;
-                            }
-                            if (Arrays.deepEquals(e.state, g)) {
-                                found = true;
-                                // This state has been added to the PQ before, so see where/if it is
-                                // currently in the PQ
-                                for (Node<Queen[]> f: nodeQueue) {
-                                    if (f.state.equals(e.state)) {
-                                        int oldVal = f.costAccumulated + f.heuristicVal;
-                                        int newVal = e.costAccumulated + f.heuristicVal;
-                                        if (newVal < oldVal) {
-                                            nodeQueue.remove(f);
-                                            nodeQueue.add(e);
-                                            break;
-                                        } else {
-                                            // You know the state is in the queue,
-                                            // but its already better value than
-                                            // what you have here
-                                            break;
-                                        }
+                    if (isSolution(current.state)) {
+                        // Continue checking if any nodes are left in the pq that
+                        // can be better
+                        // Print out info once the solution is found
+                        System.out.println("Solution Found:");
+                        int depth = pathTo(current);
+                        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+                        if (depth == 0) {
+                            System.out.println("Effective branching factor = 0, the start state was a solution.");
+                        } else {
+                            double b = ((double)totalNodesExpanded / (double)depth);
+                            System.out.println("Effective branching factor = " + b);
+                        }
+                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                        System.out.println("Total Cost: " + current.costAccumulated);
+                        nodeQueue.clear();
+                    } else {
+                        // Generate current's children, then add them to the queue
+                        // Next we expand the current node, (add all possible successors as children based on heuristic)
+                        int prevChildren = current.children.size();
+                        Node<Queen[]> expanded = hExpand(current, heuristic);
+                        if (expanded.children.size() > prevChildren) {
+                            totalNodesExpanded++;
+                        }
+                        for (Node<Queen[]> e: current.children) {
+                            // Add the node to the PQ
+                            // if its state has never been in the PQ before,
+                            // or if it is better than the node with its state
+                            // that is in the PQ
+                            // First see if the next child to add has had its state added before
+                            boolean found = false;
+                            for (Queen[] g : statesAdded) {
+                                if (found) {
+                                    break;
+                                }
+                                if (Arrays.deepEquals(e.state, g)) {
+                                    found = true;
+                                    // This state has been added to the PQ before, so see where/if it is
+                                    // currently in the PQ
+                                    for (Node<Queen[]> f: nodeQueue) {
+                                        if (f.state.equals(e.state)) {
+                                            int oldVal = f.costAccumulated + f.heuristicVal;
+                                            int newVal = e.costAccumulated + f.heuristicVal;
+                                            if (newVal < oldVal) {
+                                                nodeQueue.remove(f);
+                                                nodeQueue.add(e);
+                                                break;
+                                            } else {
+                                                // You know the state is in the queue,
+                                                // but its already better value than
+                                                // what you have here
+                                                break;
+                                            }
+                                            }
                                         }
                                     }
                                 }
+                            if (!found) {
+                                statesAdded.add(e.state);
+                                nodeQueue.add(e);
                             }
-                        if (!found) {
-                            statesAdded.add(e.state);
-                            nodeQueue.add(e);
                         }
+                        Node<Queen[]> test2 = nodeQueue.remove();
+                        current = test2;
+                        /*System.out.println("Current board state:");
+                        printBoard(current.state);
+                        test = hCurrent(current.state, heuristic);
+                        System.out.println(test + current.costAccumulated);*/
+                        moves++;
                     }
-                    Node<Queen[]> test2 = nodeQueue.remove();
-                    current = test2;
-                    /*System.out.println("Current board state:");
-                    printBoard(current.state);
-                    test = hCurrent(current.state, heuristic);
-                    System.out.println(test + current.costAccumulated);*/
-                    moves++;
                 }
             }
             // Each node is given a score based on the cost to get to it
