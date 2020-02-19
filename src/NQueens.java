@@ -377,7 +377,7 @@ public class NQueens {
         double currentTemp = 50;
         double startingTemp = 50;
         int currentRerolls = 0;
-        int rerollLimit = 10;
+        int rerollLimit = 1000;
         // For geo, test with annealing constant 0.9 first
         double annealingConstant = 0.9;
         // For log, test with annealing constant 2 first
@@ -519,7 +519,7 @@ public class NQueens {
     public static void sideWays(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
         int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-        int sideWaysMovesLimit = 0; // Adjust as desired
+        int sideWaysMovesLimit = 50; // Adjust as desired
         // NOTE: Has problems with n > 9 boards
         int numResets = 0; // Keep track of the number of times you reset
         while(!isSolution(current.state)) {
@@ -560,7 +560,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, did not pass start state");
+                        System.out.println("Effective branching factor = 0, current iteration is at start state");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
@@ -568,6 +568,7 @@ public class NQueens {
                     System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                     System.out.println("Total Cost: " + current.costAccumulated);
                     System.out.println("Resets: " + numResets);
+                    return;
                 }
             } else {
                 int pastResets = numResets;
@@ -591,7 +592,7 @@ public class NQueens {
                             int depth = pathTo(current);
                             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                             if (depth == 0) {
-                                System.out.println("Effective branching factor = 0, did not pass start state.");
+                                System.out.println("Effective branching factor = 0, current iteration is at start state.");
                             } else {
                                 double b = ((double)totalNodesExpanded / (double)depth);
                                 System.out.println("Effective branching factor = " + b);
@@ -599,6 +600,7 @@ public class NQueens {
                             System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                             System.out.println("Total Cost: " + current.costAccumulated);
                             System.out.println("Resets: " + numResets);
+                            return;
                         }
                     }
                 } else { // We've made an improvement, so reset the tolerance
@@ -644,6 +646,7 @@ public class NQueens {
         System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
         System.out.println("Total Cost: " + current.costAccumulated);
         System.out.println("Resets: " + numResets);
+        return;
     }
 
     public static void main(String[] args) {
@@ -690,8 +693,6 @@ public class NQueens {
         // Now, given the current board state, find out the h values of each next move,
         // (expand the state) and pick the best one as the next node
         if (searchType == 1) {
-            // TODO: ASK if A* should run under 10s,
-            // AND ABOUT 1/2 of max size boards
             // Note so far: The PQ successfully orders and retrieves each
             // node by costAccumulated + heuristic, but there are too many
             // nodes to deal with efficiently with h1 or h2.
