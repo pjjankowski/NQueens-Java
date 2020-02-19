@@ -404,23 +404,18 @@ public class NQueens {
             } else {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                estimatedTime = System.nanoTime() - startTime;
-                timeInSeconds = estimatedTime;
-                timeInSeconds = timeInSeconds / 1000000000;
-                System.out.println(timeInSeconds + "before");
                 int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic);
                 if (expanded.children.size() > prevChildren) {
                     totalNodesExpanded++;
                 }
-                estimatedTime = System.nanoTime() - startTime;
-                timeInSeconds = estimatedTime;
-                timeInSeconds = timeInSeconds / 1000000000;
-                System.out.println(timeInSeconds + "after");
                 // Now, we pick a successor option at random out of all possible children,
                 // UNLESS ONE IS AN IMMEDIATE SOLUTION,
                 // (skipping a solution this way would make no sense)
                 for (Node<Queen[]> e: current.children) {
+                    estimatedTime = System.nanoTime() - startTime;
+                    timeInSeconds = estimatedTime;
+                    timeInSeconds = timeInSeconds / 1000000000;
                     if (isSolution(e.state)) {
                         current = e;
                         timeStep++;
@@ -432,7 +427,6 @@ public class NQueens {
                         estimatedTime = System.nanoTime() - startTime;
                         timeInSeconds = estimatedTime;
                         timeInSeconds = timeInSeconds / 1000000000;
-                        System.out.println(timeInSeconds);
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
@@ -455,7 +449,6 @@ public class NQueens {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
                         }
-                        System.out.println("here2");
                         System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                         System.out.println("Total Cost: " + current.costAccumulated);
                         System.out.println("Resets: " + numResets);
@@ -485,7 +478,6 @@ public class NQueens {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
                         }
-                        System.out.println("here3");
                         System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                         System.out.println("Total Cost: " + current.costAccumulated);
                         System.out.println("Resets: " + numResets);
@@ -501,14 +493,6 @@ public class NQueens {
                         currentTemp = currentTemp * annealingConstant;
                         // Log version:
                         // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
-                        //System.out.println("Current board state:");
-                        //printBoard(current.state);
-                        //int test = hCurrent(current.state, heuristic);
-                        //System.out.println(test);
-                        estimatedTime = System.nanoTime() - startTime;
-                        timeInSeconds = estimatedTime;
-                        timeInSeconds = timeInSeconds / 1000000000;
-                        System.out.println(timeInSeconds + "hey" + count++);
                     } else {
                         double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
                         double probability = Math.pow(Math.E, power);
