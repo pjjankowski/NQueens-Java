@@ -349,8 +349,8 @@ public class NQueens {
         double startingTemp = 50;
         int currentRerolls = 0;
         int rerollLimit = 1000;
-        // For geo, test with annealing constant 0.9 first
-        double annealingConstant = 0.9;
+        // For geo, annealing constant 0.9 appears best
+        double annealingConstant = 2;
         // For log, test with annealing constant 2 first
         while(!isSolution(current.state)) {
             // First check if time has run out
@@ -390,9 +390,9 @@ public class NQueens {
                         current = e;
                         timeStep++;
                         // Geometric version:
-                        currentTemp = currentTemp * annealingConstant;
+                        //currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        //currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
+                        currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         // Found a solution:
                         estimatedTime = System.nanoTime() - startTime;
                         timeInSeconds = estimatedTime;
@@ -459,9 +459,9 @@ public class NQueens {
                         current = successor;
                         timeStep++;
                         // Geometric version:
-                        currentTemp = currentTemp * annealingConstant;
+                        //currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
+                        currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                     } else {
                         double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
                         double probability = Math.pow(Math.E, power);
@@ -473,9 +473,9 @@ public class NQueens {
                             current = successor;
                             timeStep++;
                             // Geometric version:
-                            currentTemp = currentTemp * annealingConstant;
+                            //currentTemp = currentTemp * annealingConstant;
                             // Log version:
-                            // currentTemp = startingTemp / Math.log(timeStep + annealingConstant);
+                             currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         } else {
                             estimatedTime = System.nanoTime() - startTime;
                             timeInSeconds = estimatedTime;
@@ -637,11 +637,6 @@ public class NQueens {
                     // help immediately even if one exists)
                     choice = rand.nextInt(choice);
                     current = options.get(choice);
-                    // Print current board state to see what happens
-                    /*System.out.println("Current board state:");
-                    printBoard(current.state);
-                    test = hCurrent(current.state, heuristic);
-                    System.out.println(test);*/
                     }
                 }
         }
