@@ -232,7 +232,7 @@ public class Main {
     // then their parent has already expanded a child that has that better option)
     // Want to find ways to restrict expansion and minimize b as much as
     // possible
-    public static Node<Queen[]> hExpand(Node<Queen[]> currentNode, String heuristic) {
+    public static Node<Queen[]> hExpand(Node<Queen[]> currentNode, String heuristic, long startTime) {
         if (currentNode.children.size() > 0) {
             // This node has already been expanded, so no need to do it again.
             return currentNode;
@@ -242,20 +242,40 @@ public class Main {
         // For each queen, make all moves possible to put the queen in a different row,
         // same column
         for (int currentQueen = 0; currentQueen < queens; currentQueen++) {
+            double time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+            if (time > 10) {
+                return currentNode;
+            }
             if (currentQueen != currentNode.lastMoveIndex) {
                 int row = currentState[currentQueen].row;
                 for (int i = 0; i < queens; i++) {
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        return currentNode;
+                    }
                     // Don't consider moves where a queen ends up in the same row, that's not a move!
                     if (i != row) {
                         // Clone the old state to a new state, only changing where the queen is located
                         Queen[] newState = new Queen[currentState.length];
                         for (int j = 0; j < newState.length; j++) {
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                return currentNode;
+                            }
                             newState[j] = new Queen(currentState[j]);
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                return currentNode;
+                            }
                         }
                         newState[currentQueen].row = i;
                         int cost = Math.abs(row - i) * currentState[currentQueen].weight * currentState[currentQueen].weight;
                         // Now, make a node that has the new state in it as a child
                         currentNode.addChild(newState, cost, hCurrent(newState, heuristic), currentQueen);
+                    }
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        return currentNode;
                     }
                 }
             }
@@ -351,9 +371,7 @@ public class Main {
         // and none are better than geometric
         while(!isSolution(current.state)) {
             // First check if time has run out
-            long estimatedTime = System.nanoTime() - startTime;
-            double timeInSeconds = estimatedTime;
-            timeInSeconds = timeInSeconds / 1000000000;
+            double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
             if (timeInSeconds > 10) {
                 // A solution has not been found in 10 seconds
                 int depth = pathTo(current);
@@ -372,7 +390,7 @@ public class Main {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
                 int prevChildren = current.children.size();
-                Node<Queen[]> expanded = hExpand(current, heuristic);
+                Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                 if (expanded.children.size() > prevChildren) {
                     totalNodesExpanded++;
                 }
@@ -380,9 +398,7 @@ public class Main {
                 // UNLESS ONE IS AN IMMEDIATE SOLUTION,
                 // (skipping a solution this way would make no sense)
                 for (Node<Queen[]> e: current.children) {
-                    estimatedTime = System.nanoTime() - startTime;
-                    timeInSeconds = estimatedTime;
-                    timeInSeconds = timeInSeconds / 1000000000;
+                    timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                     if (isSolution(e.state)) {
                         current = e;
                         timeStep++;
@@ -391,9 +407,7 @@ public class Main {
                         // Log version:
                         //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         // Found a solution:
-                        estimatedTime = System.nanoTime() - startTime;
-                        timeInSeconds = estimatedTime;
-                        timeInSeconds = timeInSeconds / 1000000000;
+                        timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
@@ -431,9 +445,7 @@ public class Main {
                 // If successor is immediately better, pick it.
                 // Otherwise, see if it passes the random formula
                 while (!successorPassed) {
-                    estimatedTime = System.nanoTime() - startTime;
-                    timeInSeconds = estimatedTime;
-                    timeInSeconds = timeInSeconds / 1000000000;
+                    timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                     if (timeInSeconds > 10) {
                         // Did not find a solution:
                         int depth = pathTo(current);
@@ -474,9 +486,7 @@ public class Main {
                             // Log version:
                             //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         } else {
-                            estimatedTime = System.nanoTime() - startTime;
-                            timeInSeconds = estimatedTime;
-                            timeInSeconds = timeInSeconds / 1000000000;
+                            timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                             if (timeInSeconds > 10) {
                                 // Did not find a solution:
                                 int depth = pathTo(current);
@@ -512,9 +522,7 @@ public class Main {
             }
         }
         // Found a solution:
-        long estimatedTime = System.nanoTime() - startTime;
-        double timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
+        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         int depth = pathTo(current);
         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
         if (depth == 0) {
@@ -554,21 +562,26 @@ public class Main {
         double annealingConstant = 0.9;
         // For log, tested with annealing constants 2, 5, 10,
         // and none are better than geometric
-        long estimatedTime = System.nanoTime() - startTime;
-        double timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
-        while(timeInSeconds <= 10) {
+        double time = 0;
+        while (time < 10) {
             // First check if time has run out
-            estimatedTime = System.nanoTime() - startTime;
-            timeInSeconds = estimatedTime;
-            timeInSeconds = timeInSeconds / 1000000000;
-            if (timeInSeconds > 10) {
+            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+            if (time > 10) {
                 break;
             } else {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
+                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                if (time > 10) {
+                    break;
+                }
                 int prevChildren = current.children.size();
-                Node<Queen[]> expanded = hExpand(current, heuristic);
+                Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
+                double lastTime = time;
+                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                if (time > 10) {
+                    break;
+                }
                 if (expanded.children.size() > prevChildren) {
                     totalNodesExpanded++;
                 }
@@ -576,9 +589,10 @@ public class Main {
                 // UNLESS ONE IS AN IMMEDIATE SOLUTION,
                 // (skipping a solution this way would make no sense)
                 for (Node<Queen[]> e: current.children) {
-                    estimatedTime = System.nanoTime() - startTime;
-                    timeInSeconds = estimatedTime;
-                    timeInSeconds = timeInSeconds / 1000000000;
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        break;
+                    }
                     if (isSolution(e.state)) {
                         current = e;
                         timeStep++;
@@ -587,13 +601,11 @@ public class Main {
                         // Log version:
                         //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         // Found a solution:
-                        estimatedTime = System.nanoTime() - startTime;
-                        timeInSeconds = estimatedTime;
-                        timeInSeconds = timeInSeconds / 1000000000;
+                        time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                         int costFound = current.costAccumulated;
                         if (optimalSolution == null || optimalSolution.costAccumulated > costFound) {
                             optResets = numResets;
-                            optimalSolutionTime = timeInSeconds;
+                            optimalSolutionTime = time;
                             optimalSolution = current;
                         }
                         // Reset due to finding solution
@@ -604,40 +616,39 @@ public class Main {
                         break;
                     }
                 }
+                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                if (time > 10) {
+                    break;
+                }
+                //System.out.println(time + "b");
                 if (isSolution(current.state)) {
                     current = root;
                 } else {
                     // Check time passed again
-                    estimatedTime = System.nanoTime() - startTime;
-                    timeInSeconds = estimatedTime;
-                    timeInSeconds = timeInSeconds / 1000000000;
-                    if (timeInSeconds > 10) {
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
                         break;
                     }
                     // Now that we are sure there are no immediate solutions, pick
                     // a successor at random until one passes the temperature formula
                     Random rand = new Random();
                     int size = current.children.size();
-                    if (size == 0) {
-                        if (isSolution(current.state)) {
-                            System.out.println("help");
-                        } else {
-                            printBoard(current.state);
-                        }
-                    }
                     int choice = rand.nextInt(size);
                     boolean successorPassed = false;
                     // If successor is immediately better, pick it.
                     // Otherwise, see if it passes the random formula
-                    while (!successorPassed) {
-                        estimatedTime = System.nanoTime() - startTime;
-                        timeInSeconds = estimatedTime;
-                        timeInSeconds = timeInSeconds / 1000000000;
-                        if (timeInSeconds > 10) {
+                    while (!successorPassed && time < 10) {
+                        time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                        //System.out.println(time + "c");
+                        if (time > 10) {
                             break;
                         }
                         Node<Queen[]> successor = current.children.get(choice);
                         if (successor.heuristicVal >= current.heuristicVal) {
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                break;
+                            }
                             currentRerolls = 0;
                             successorPassed = true;
                             current = successor;
@@ -647,6 +658,10 @@ public class Main {
                             // Log version:
                             //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         } else {
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                break;
+                            }
                             double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
                             double probability = Math.pow(Math.E, power);
                             double probToBeat = rand.nextDouble();
@@ -661,10 +676,8 @@ public class Main {
                                 // Log version:
                                 //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                             } else {
-                                estimatedTime = System.nanoTime() - startTime;
-                                timeInSeconds = estimatedTime;
-                                timeInSeconds = timeInSeconds / 1000000000;
-                                if (timeInSeconds > 10) {
+                                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                                if (time > 10) {
                                     break;
                                 }
                                 currentRerolls++;
@@ -684,23 +697,26 @@ public class Main {
                             }
                         }
                     }
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    //System.out.println(time + "d");
+                    if (time > 10) {
+                        break;
+                    }
                 }
             }
         }
         // Return the best solution found, if any:
-        estimatedTime = System.nanoTime() - startTime;
-        timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
+        //time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         if (optimalSolution != null) {
-            int depth = pathTo(optimalSolution);
+            /*int depth = pathTo(optimalSolution);
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             if (depth == 0) {
                 System.out.println("Effective branching factor = 0, the start state was a solution.");
             } else {
                 double b = ((double)totalNodesExpanded / (double)depth);
                 System.out.println("Effective branching factor = " + b);
-            }
-            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            }*/
+            System.out.println("Time Elapsed: " + time + " seconds");
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
             System.out.println("Resets: " + numResets);
@@ -708,7 +724,7 @@ public class Main {
             System.out.println("No solution path found.");
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             System.out.println("Effective branching factor = Infinity, no solution path found.");
-            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            System.out.println("Time Elapsed: " + time + " seconds");
             System.out.println("Resets: " + numResets);
         }
     }
@@ -724,7 +740,7 @@ public class Main {
             // First expand current node, then pick from best children
             // Next we expand the current node, (add all possible successors as children based on heuristic)
             int prevChildren = current.children.size();
-            Node<Queen[]> expanded = hExpand(current, heuristic);
+            Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
             if (expanded.children.size() > prevChildren) {
                 totalNodesExpanded++;
             }
@@ -743,9 +759,7 @@ public class Main {
             }
             // What do we do if no children provide improvements or sideways? Reset!
             if (bestHeuristic > current.heuristicVal) {
-                long estimatedTime = System.nanoTime() - startTime;
-                double timeInSeconds = estimatedTime;
-                timeInSeconds = timeInSeconds / 1000000000;
+                double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (timeInSeconds < 10) {
                     current = root;
                     //System.out.println("Resetting, no improvements!");
@@ -775,9 +789,7 @@ public class Main {
                 if (bestHeuristic == current.heuristicVal) {
                     sideWaysMoves++;
                     if (sideWaysMoves > sideWaysMovesLimit) {
-                        long estimatedTime = System.nanoTime() - startTime;
-                        double timeInSeconds = estimatedTime;
-                        timeInSeconds = timeInSeconds / 1000000000;
+                        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                         if (timeInSeconds < 10) {
                             current = root;
                             //System.out.println("Resetting, too many sideways!");
@@ -822,9 +834,7 @@ public class Main {
                     }
                 }
         }
-        long estimatedTime = System.nanoTime() - startTime;
-        double timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
+        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         // A solution is found! Print out some info:
         // Nodes expanded and time are across all restarts,
         // costAccumulated is only for the path that we end up with
@@ -850,18 +860,14 @@ public class Main {
         int sideWaysMovesLimit = 100; // Adjust as desired
         // NOTE: Has problems with n > 9 boards
         int numResets = 0; // Keep track of the number of times you reset
-        long estimatedTime = System.nanoTime() - startTime;
-        double timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
+        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         Node<Queen[]> optimalSolution = null;
         double optimalSolutionTime = 0;
         int optimalSolutionReset = 0;
         while(timeInSeconds <= 10) {
             // See if the current node is a solution
             if (isSolution(current.state)) {
-                estimatedTime = System.nanoTime() - startTime;
-                timeInSeconds = estimatedTime;
-                timeInSeconds = timeInSeconds / 1000000000;
+                timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (optimalSolution == null ||
                         current.costAccumulated < optimalSolution.costAccumulated) {
                     optimalSolution = current;
@@ -874,7 +880,7 @@ public class Main {
                 // If not a solution, expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
                 int prevChildren = current.children.size();
-                Node<Queen[]> expanded = hExpand(current, heuristic);
+                Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                 if (expanded.children.size() > prevChildren) {
                     totalNodesExpanded++;
                 }
@@ -925,13 +931,9 @@ public class Main {
                     }
                 }
             }
-            estimatedTime = System.nanoTime() - startTime;
-            timeInSeconds = estimatedTime;
-            timeInSeconds = timeInSeconds / 1000000000;
+            timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         }
-        estimatedTime = System.nanoTime() - startTime;
-        timeInSeconds = estimatedTime;
-        timeInSeconds = timeInSeconds / 1000000000;
+        timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         // Print out some info on the best solution found
         if (optimalSolution != null) {
             int depth = pathTo(optimalSolution);
@@ -957,7 +959,7 @@ public class Main {
 
     public static void main(String[] args) {
         // Start the timer right away
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         // Input parameters
         String boardFile = args[0];
         Queen state[];
@@ -1013,9 +1015,7 @@ public class Main {
             //nodeQueue.add(current);
             int moves = 0;
             while (!nodeQueue.isEmpty() || moves == 0) {
-                long estimatedTime = System.nanoTime() - startTime;
-                double timeInSeconds = estimatedTime;
-                timeInSeconds = timeInSeconds / 1000000000;
+                double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (timeInSeconds > 10) {
                     // No Solution found in under 10s
                     System.out.println("Solution Not Found In Under 10s:");
@@ -1051,7 +1051,7 @@ public class Main {
                         // Generate current's children, then add them to the queue
                         // Next we expand the current node, (add all possible successors as children based on heuristic)
                         int prevChildren = current.children.size();
-                        Node<Queen[]> expanded = hExpand(current, heuristic);
+                        Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                         if (expanded.children.size() > prevChildren) {
                             totalNodesExpanded++;
                         }
