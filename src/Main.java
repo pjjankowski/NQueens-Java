@@ -704,14 +704,12 @@ public class Main {
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
             System.out.println("Resets: " + numResets);
-            return;
         } else {
             System.out.println("No solution path found.");
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             System.out.println("Effective branching factor = Infinity, no solution path found.");
             System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
             System.out.println("Resets: " + numResets);
-            return;
         }
     }
 
@@ -842,6 +840,119 @@ public class Main {
         System.out.println("Total Cost: " + current.costAccumulated);
         System.out.println("Resets: " + numResets);
         return;
+    }
+
+    // Do greedy hill climbing with sideways moves
+    // This method performs over the full 10 seconds
+    public static void sideWaysOpt(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+        // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
+        int sideWaysMoves = 0; // Reset after a certain # of sideways moves
+        int sideWaysMovesLimit = 100; // Adjust as desired
+        // NOTE: Has problems with n > 9 boards
+        int numResets = 0; // Keep track of the number of times you reset
+        long estimatedTime = System.nanoTime() - startTime;
+        double timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        Node<Queen[]> optimalSolution = null;
+        double optimalSolutionTime = 0;
+        int optimalSolutionReset = 0;
+        while(timeInSeconds <= 10) {
+            // See if the current node is a solution
+            if (isSolution(current.state)) {
+                estimatedTime = System.nanoTime() - startTime;
+                timeInSeconds = estimatedTime;
+                timeInSeconds = timeInSeconds / 1000000000;
+                if (optimalSolution == null ||
+                        current.costAccumulated < optimalSolution.costAccumulated) {
+                    optimalSolution = current;
+                    optimalSolutionTime = timeInSeconds;
+                    optimalSolutionReset = numResets;
+                }
+                current = root;
+                numResets++;
+            } else {
+                // If not a solution, expand current node, then pick from best children
+                // Next we expand the current node, (add all possible successors as children based on heuristic)
+                int prevChildren = current.children.size();
+                Node<Queen[]> expanded = hExpand(current, heuristic);
+                if (expanded.children.size() > prevChildren) {
+                    totalNodesExpanded++;
+                }
+                // Now we look at each of the children of the current state that have been generated and
+                // pick one at random to use next based on what has the best heuristic, ignoring cost
+                int bestHeuristic = -1;
+                ArrayList<Node<Queen[]>> options = new ArrayList<Node<Queen[]>>();
+                for (Node<Queen[]> e: current.children) {
+                    if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
+                        bestHeuristic = e.heuristicVal;
+                        options = new ArrayList<Node<Queen[]>>();
+                        options.add(e);
+                    } else if (e.heuristicVal == bestHeuristic) {
+                        options.add(e);
+                    }
+                }
+                // What do we do if no children provide improvements or sideways? Reset!
+                if (bestHeuristic > current.heuristicVal) {
+                    current = root;
+                    //System.out.println("Resetting, no improvements!");
+                    sideWaysMoves = 0;
+                    numResets++;
+                } else {
+                    int pastResets = numResets;
+                    // When making a sideways move,
+                    // see if it violates the limit for sideways moves or not
+                    if (bestHeuristic == current.heuristicVal) {
+                        sideWaysMoves++;
+                        if (sideWaysMoves > sideWaysMovesLimit) {
+                            current = root;
+                            //System.out.println("Resetting, too many sideways!");
+                            sideWaysMoves = 0;
+                            numResets++;
+                        }
+                    } else { // We've made an improvement, so reset the tolerance
+                        // for sideways moves
+                        sideWaysMoves = 0;
+                    }
+                // If we did not just reset from too many sideways moves,
+                // make a move
+                if (pastResets == numResets) {
+                    // Now that we have a list of best possible children that are better,
+                    // pick one at random for the next looping
+                    int choice = options.size();
+                    Random rand = new Random();
+                    choice = rand.nextInt(choice);
+                    current = options.get(choice);
+                    }
+                }
+            }
+            estimatedTime = System.nanoTime() - startTime;
+            timeInSeconds = estimatedTime;
+            timeInSeconds = timeInSeconds / 1000000000;
+        }
+        estimatedTime = System.nanoTime() - startTime;
+        timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        // Print out some info on the best solution found
+        if (optimalSolution != null) {
+            int depth = pathTo(optimalSolution);
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            if (depth == 0) {
+                System.out.println("Effective branching factor = 0, the start state was a solution.");
+            } else {
+                double b = ((double)totalNodesExpanded / (double)depth);
+                System.out.println("Effective branching factor = " + b);
+            }
+            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
+            System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
+            System.out.println("Resets: " + numResets);
+        } else {
+            System.out.println("No solution path found.");
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            System.out.println("Effective branching factor = Infinity, no solution path found.");
+            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            System.out.println("Resets: " + numResets);
+        }
     }
 
     public static void main(String[] args) {
@@ -1001,7 +1112,7 @@ public class Main {
         else { //(searchType == 2)
             // NOTE: Sim annealing is far better than just permitting sideways moves
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            //sideWays(totalNodesExpanded, startTime, heuristic, root);
+            //sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
             simAnnealOpt(totalNodesExpanded, startTime, heuristic, root);
         }
     }
