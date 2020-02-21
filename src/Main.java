@@ -332,8 +332,8 @@ public class Main {
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
     public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
-        // ASK: DO WE TAKE A BETTER MOVE IF ONE EXISTS
-        // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER? Not necessarily, test.
+        // Do not take a better move even if one exists, unless it is immediately
+        // a solution
         // Should do resets if too many consecutive rerolls or too low temp
         int timeStep = 1;
         int numResets = 0;
@@ -495,6 +495,7 @@ public class Main {
                             currentRerolls++;
                             if (currentRerolls == rerollLimit) {
                                 // Reset due to too many rerolls
+                                currentRerolls = 0;
                                 numResets++;
                                 current = root;
                                 timeStep = 1;
@@ -526,6 +527,192 @@ public class Main {
         System.out.println("Total Cost: " + current.costAccumulated);
         System.out.println("Resets: " + numResets);
         return;
+    }
+
+    // Greedy hill climbing with simulated annealing
+    // Instead of always taking the best move, pick a move at random and
+    // take it with a probability
+    // This version resets if < 10 seconds, tries to find best solution it can
+    public static void simAnnealOpt(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+        // Do not take a better move even if one exists, unless it is immediately
+        // a solution
+        // Should do resets if too many consecutive rerolls or too low temp
+        int timeStep = 1;
+        Node<Queen[]> optimalSolution = null;
+        double optimalSolutionTime = 0;
+        int numResets = 0;
+        int optResets = 0; // # of resets before the optimal solution was found
+        // Test with starting temp 5, 50, 500, 5000
+        double currentTemp = 5;
+        double startingTemp = 5;
+        int currentRerolls = 0;
+        // For rerollLimit, 100 seems better than 1000, which is better than
+        // 10 which is better than 1
+        int rerollLimit = 100;
+        // For geo, annealing constant 0.9 appears better than 0.8
+        // but need to test
+        double annealingConstant = 0.9;
+        // For log, tested with annealing constants 2, 5, 10,
+        // and none are better than geometric
+        long estimatedTime = System.nanoTime() - startTime;
+        double timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        while(timeInSeconds <= 10) {
+            // First check if time has run out
+            estimatedTime = System.nanoTime() - startTime;
+            timeInSeconds = estimatedTime;
+            timeInSeconds = timeInSeconds / 1000000000;
+            if (timeInSeconds > 10) {
+                break;
+            } else {
+                // Expand current node, then pick from best children
+                // Next we expand the current node, (add all possible successors as children based on heuristic)
+                int prevChildren = current.children.size();
+                Node<Queen[]> expanded = hExpand(current, heuristic);
+                if (expanded.children.size() > prevChildren) {
+                    totalNodesExpanded++;
+                }
+                // Now, we pick a successor option at random out of all possible children,
+                // UNLESS ONE IS AN IMMEDIATE SOLUTION,
+                // (skipping a solution this way would make no sense)
+                for (Node<Queen[]> e: current.children) {
+                    estimatedTime = System.nanoTime() - startTime;
+                    timeInSeconds = estimatedTime;
+                    timeInSeconds = timeInSeconds / 1000000000;
+                    if (isSolution(e.state)) {
+                        current = e;
+                        timeStep++;
+                        // Geometric version:
+                        currentTemp = currentTemp * annealingConstant;
+                        // Log version:
+                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        // Found a solution:
+                        estimatedTime = System.nanoTime() - startTime;
+                        timeInSeconds = estimatedTime;
+                        timeInSeconds = timeInSeconds / 1000000000;
+                        int costFound = current.costAccumulated;
+                        if (optimalSolution == null || optimalSolution.costAccumulated > costFound) {
+                            optResets = numResets;
+                            optimalSolutionTime = timeInSeconds;
+                            optimalSolution = current;
+                        }
+                        // Reset due to finding solution
+                        numResets++;
+                        currentRerolls = 0;
+                        timeStep = 1;
+                        currentTemp = startingTemp;
+                        break;
+                    }
+                }
+                if (isSolution(current.state)) {
+                    current = root;
+                } else {
+                    // Check time passed again
+                    estimatedTime = System.nanoTime() - startTime;
+                    timeInSeconds = estimatedTime;
+                    timeInSeconds = timeInSeconds / 1000000000;
+                    if (timeInSeconds > 10) {
+                        break;
+                    }
+                    // Now that we are sure there are no immediate solutions, pick
+                    // a successor at random until one passes the temperature formula
+                    Random rand = new Random();
+                    int size = current.children.size();
+                    if (size == 0) {
+                        if (isSolution(current.state)) {
+                            System.out.println("help");
+                        } else {
+                            printBoard(current.state);
+                        }
+                    }
+                    int choice = rand.nextInt(size);
+                    boolean successorPassed = false;
+                    // If successor is immediately better, pick it.
+                    // Otherwise, see if it passes the random formula
+                    while (!successorPassed) {
+                        estimatedTime = System.nanoTime() - startTime;
+                        timeInSeconds = estimatedTime;
+                        timeInSeconds = timeInSeconds / 1000000000;
+                        if (timeInSeconds > 10) {
+                            break;
+                        }
+                        Node<Queen[]> successor = current.children.get(choice);
+                        if (successor.heuristicVal >= current.heuristicVal) {
+                            currentRerolls = 0;
+                            successorPassed = true;
+                            current = successor;
+                            timeStep++;
+                            // Geometric version:
+                            currentTemp = currentTemp * annealingConstant;
+                            // Log version:
+                            //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        } else {
+                            double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
+                            double probability = Math.pow(Math.E, power);
+                            double probToBeat = rand.nextDouble();
+                            if (probToBeat <= probability) {
+                                currentRerolls = 0;
+                                // Keep this one
+                                successorPassed = true;
+                                current = successor;
+                                timeStep++;
+                                // Geometric version:
+                                currentTemp = currentTemp * annealingConstant;
+                                // Log version:
+                                //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                            } else {
+                                estimatedTime = System.nanoTime() - startTime;
+                                timeInSeconds = estimatedTime;
+                                timeInSeconds = timeInSeconds / 1000000000;
+                                if (timeInSeconds > 10) {
+                                    break;
+                                }
+                                currentRerolls++;
+                                if (currentRerolls == rerollLimit) {
+                                    // Reset due to too many rerolls
+                                    numResets++;
+                                    currentRerolls = 0;
+                                    current = root;
+                                    timeStep = 1;
+                                    currentTemp = startingTemp;
+                                    successorPassed = true;
+                                } else {
+                                    // Pick another successor
+                                    choice = rand.nextInt(size);
+                                    //System.out.println("Rerolling " + probToBeat + "  " + probability + "  " + power);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Return the best solution found, if any:
+        estimatedTime = System.nanoTime() - startTime;
+        timeInSeconds = estimatedTime;
+        timeInSeconds = timeInSeconds / 1000000000;
+        if (optimalSolution != null) {
+            int depth = pathTo(optimalSolution);
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            if (depth == 0) {
+                System.out.println("Effective branching factor = 0, the start state was a solution.");
+            } else {
+                double b = ((double)totalNodesExpanded / (double)depth);
+                System.out.println("Effective branching factor = " + b);
+            }
+            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
+            System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
+            System.out.println("Resets: " + numResets);
+            return;
+        } else {
+            System.out.println("No solution path found.");
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            System.out.println("Effective branching factor = Infinity, no solution path found.");
+            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+            System.out.println("Resets: " + numResets);
+            return;
+        }
     }
 
     // Do greedy hill climbing with sideways moves
@@ -815,7 +1002,7 @@ public class Main {
             // NOTE: Sim annealing is far better than just permitting sideways moves
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             //sideWays(totalNodesExpanded, startTime, heuristic, root);
-            simAnneal(totalNodesExpanded, startTime, heuristic, root);
+            simAnnealOpt(totalNodesExpanded, startTime, heuristic, root);
         }
     }
 }
