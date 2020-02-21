@@ -708,14 +708,14 @@ public class Main {
         // Return the best solution found, if any:
         //time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         if (optimalSolution != null) {
-            /*int depth = pathTo(optimalSolution);
+            int depth = pathTo(optimalSolution);
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             if (depth == 0) {
                 System.out.println("Effective branching factor = 0, the start state was a solution.");
             } else {
                 double b = ((double)totalNodesExpanded / (double)depth);
                 System.out.println("Effective branching factor = " + b);
-            }*/
+            }
             System.out.println("Time Elapsed: " + time + " seconds");
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
