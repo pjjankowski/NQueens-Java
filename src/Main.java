@@ -1,12 +1,5 @@
 // The N Queens problem, using A* and greedy search
 
-// List of things left TODO:
-// 1. Simulated Annealing
-// 2. Print final output path, as well as effective branching factor (DONE except for sim anneal)
-// 3. Sideways moves limited consecutively, not cumulatively (DONE)
-// 4. Stop hill climb after 10s, (DONE FOR SIDEWAYS, NOT SIM ANNEAL)
-// 5. Writup
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,7 +11,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Stack;
 
-public class NQueens {
+public class Main {
 
     // A global variable for the current node
     static Node<Queen[]> current = null;
@@ -339,19 +332,23 @@ public class NQueens {
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
     public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
-        //TODO: Implement simulated annealing
         // ASK: DO WE TAKE A BETTER MOVE IF ONE EXISTS
         // AND ONLY ANNEAL WHEN THERE'S NOTHING BETTER? Not necessarily, test.
         // Should do resets if too many consecutive rerolls or too low temp
         int timeStep = 1;
         int numResets = 0;
-        double currentTemp = 50;
-        double startingTemp = 50;
+        // Test with starting temp 5, 50, 500, 5000
+        double currentTemp = 5;
+        double startingTemp = 5;
         int currentRerolls = 0;
-        int rerollLimit = 1000;
-        // For geo, annealing constant 0.9 appears best
-        double annealingConstant = 2;
-        // For log, test with annealing constant 2 first
+        // For rerollLimit, 100 seems better than 1000, which is better than
+        // 10 which is better than 1
+        int rerollLimit = 100;
+        // For geo, annealing constant 0.9 appears better than 0.8
+        // but need to test
+        double annealingConstant = 0.9;
+        // For log, tested with annealing constants 2, 5, 10,
+        // and none are better than geometric
         while(!isSolution(current.state)) {
             // First check if time has run out
             long estimatedTime = System.nanoTime() - startTime;
@@ -362,7 +359,7 @@ public class NQueens {
                 int depth = pathTo(current);
                 System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                 if (depth == 0) {
-                    System.out.println("Effective branching factor = 0, did not find a solution path.");
+                    System.out.println("Effective branching factor = Infinity, no solution path was found.");
                 } else {
                     double b = ((double)totalNodesExpanded / (double)depth);
                     System.out.println("Effective branching factor = " + b);
@@ -390,9 +387,9 @@ public class NQueens {
                         current = e;
                         timeStep++;
                         // Geometric version:
-                        //currentTemp = currentTemp * annealingConstant;
+                        currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         // Found a solution:
                         estimatedTime = System.nanoTime() - startTime;
                         timeInSeconds = estimatedTime;
@@ -414,7 +411,7 @@ public class NQueens {
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
-                            System.out.println("Effective branching factor = 0, did not find a solution path.");
+                            System.out.println("Effective branching factor = Infinity, no solution path was found.");
                         } else {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
@@ -442,7 +439,7 @@ public class NQueens {
                         int depth = pathTo(current);
                         System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                         if (depth == 0) {
-                            System.out.println("Effective branching factor = 0, did not find a solution path");
+                            System.out.println("Effective branching factor = Infinity, no solution path was found.");
                         } else {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
@@ -459,9 +456,9 @@ public class NQueens {
                         current = successor;
                         timeStep++;
                         // Geometric version:
-                        //currentTemp = currentTemp * annealingConstant;
+                        currentTemp = currentTemp * annealingConstant;
                         // Log version:
-                        currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                     } else {
                         double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
                         double probability = Math.pow(Math.E, power);
@@ -473,9 +470,9 @@ public class NQueens {
                             current = successor;
                             timeStep++;
                             // Geometric version:
-                            //currentTemp = currentTemp * annealingConstant;
+                            currentTemp = currentTemp * annealingConstant;
                             // Log version:
-                             currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                            //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
                         } else {
                             estimatedTime = System.nanoTime() - startTime;
                             timeInSeconds = estimatedTime;
@@ -485,7 +482,7 @@ public class NQueens {
                                 int depth = pathTo(current);
                                 System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                                 if (depth == 0) {
-                                    System.out.println("Effective branching factor = 0, did not find a solution path.");
+                                    System.out.println("Effective branching factor = Infinity, no solution path was found.");
                                 } else {
                                     double b = ((double)totalNodesExpanded / (double)depth);
                                     System.out.println("Effective branching factor = " + b);
@@ -535,7 +532,7 @@ public class NQueens {
     public static void sideWays(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
         int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-        int sideWaysMovesLimit = 50; // Adjust as desired
+        int sideWaysMovesLimit = 100; // Adjust as desired
         // NOTE: Has problems with n > 9 boards
         int numResets = 0; // Keep track of the number of times you reset
         while(!isSolution(current.state)) {
@@ -576,7 +573,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, no solution path was found.");
+                        System.out.println("Effective branching factor = Infinity, no solution path was found.");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
@@ -608,7 +605,7 @@ public class NQueens {
                             int depth = pathTo(current);
                             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                             if (depth == 0) {
-                                System.out.println("Effective branching factor = 0, current iteration is at start state.");
+                                System.out.println("Effective branching factor = Infinity, no solution path found.");
                             } else {
                                 double b = ((double)totalNodesExpanded / (double)depth);
                                 System.out.println("Effective branching factor = " + b);
@@ -727,7 +724,7 @@ public class NQueens {
                     int depth = pathTo(current);
                     System.out.println("Number of nodes expanded: " + totalNodesExpanded);
                     if (depth == 0) {
-                        System.out.println("Effective branching factor = 0, no solution path found.");
+                        System.out.println("Effective branching factor = Infinity, no solution path found.");
                     } else {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
@@ -815,7 +812,7 @@ public class NQueens {
         }
 
         else { //(searchType == 2)
-            // NOTE: Appears to need sim annealing, or gets stuck sometimes
+            // NOTE: Sim annealing is far better than just permitting sideways moves
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
             //sideWays(totalNodesExpanded, startTime, heuristic, root);
             simAnneal(totalNodesExpanded, startTime, heuristic, root);
