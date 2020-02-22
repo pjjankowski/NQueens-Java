@@ -1022,13 +1022,10 @@ public class Main {
                         double b = ((double)totalNodesExpanded / (double)depth);
                         System.out.println("Effective branching factor = " + b);
                     }
-                    System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
                     System.out.println("Total Cost: " + current.costAccumulated);
                     nodeQueue.clear();
                 } else {
                     if (isSolution(current.state)) {
-                        // Continue checking if any nodes are left in the pq that
-                        // can be better
                         // Print out info once the solution is found
                         System.out.println("Solution Found:");
                         int depth = pathTo(current);
@@ -1039,7 +1036,7 @@ public class Main {
                             double b = ((double)totalNodesExpanded / (double)depth);
                             System.out.println("Effective branching factor = " + b);
                         }
-                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
+                        System.out.println("Solution Found at: " + timeInSeconds + " seconds");
                         System.out.println("Total Cost: " + current.costAccumulated);
                         nodeQueue.clear();
                     } else {
@@ -1090,10 +1087,6 @@ public class Main {
                         }
                         Node<Queen[]> test2 = nodeQueue.remove();
                         current = test2;
-                        /*System.out.println("Current board state:");
-                        printBoard(current.state);
-                        test = hCurrent(current.state, heuristic);
-                        System.out.println(test + current.costAccumulated);*/
                         moves++;
                     }
                 }
