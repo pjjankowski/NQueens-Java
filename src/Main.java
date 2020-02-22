@@ -716,7 +716,6 @@ public class Main {
                 double b = ((double)totalNodesExpanded / (double)depth);
                 System.out.println("Effective branching factor = " + b);
             }
-            System.out.println("Time Elapsed: " + time + " seconds");
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
             System.out.println("Resets: " + numResets);
@@ -724,7 +723,6 @@ public class Main {
             System.out.println("No solution path found.");
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             System.out.println("Effective branching factor = Infinity, no solution path found.");
-            System.out.println("Time Elapsed: " + time + " seconds");
             System.out.println("Resets: " + numResets);
         }
     }
@@ -933,7 +931,6 @@ public class Main {
             }
             timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         }
-        timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         // Print out some info on the best solution found
         if (optimalSolution != null) {
             int depth = pathTo(optimalSolution);
@@ -944,7 +941,6 @@ public class Main {
                 double b = ((double)totalNodesExpanded / (double)depth);
                 System.out.println("Effective branching factor = " + b);
             }
-            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
             System.out.println("Resets: " + numResets);
@@ -952,7 +948,6 @@ public class Main {
             System.out.println("No solution path found.");
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             System.out.println("Effective branching factor = Infinity, no solution path found.");
-            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
             System.out.println("Resets: " + numResets);
         }
     }
