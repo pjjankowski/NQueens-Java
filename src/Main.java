@@ -42,17 +42,23 @@ public class Main {
                 moveStack.add(current);
                 current = current.parent;
             }
-            //System.out.println("The starting board state is: ");
-            //printBoard(current.state);
+            System.out.println("Note: The first row and column are row 0 and column 0 respectively");
             System.out.println("The sequence of moves to the end state is as follows:");
-            // Now, print out the boards from root to end
+            // Now, print out the moves from root to end
             Queen[] state = current.state;
             while(!moveStack.empty()) {
-                System.out.println("The next board state is:");
+                Queen[] lastState = state;
                 state = moveStack.pop().state;
-                printBoard(state);
+                for(int i = 0; i < state.length; i++) {
+                    if (state[i].row != lastState[i].row) {
+                        System.out.println("Moved queen in column " + i + " from row " +
+                    lastState[i].row + " to " + state[i].row);
+                        i = state.length;
+                    }
+                }
            }
-            System.out.println("The final state in the path is a solution.");
+            System.out.println("The final state in the path is a solution as follows:");
+            printBoard(state);
         } else {
             System.out.println("No solution was found in 10s or less.");
         }
@@ -571,13 +577,8 @@ public class Main {
             } else {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                if (time > 10) {
-                    break;
-                }
                 int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
-                double lastTime = time;
                 time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (time > 10) {
                     break;
@@ -620,7 +621,6 @@ public class Main {
                 if (time > 10) {
                     break;
                 }
-                //System.out.println(time + "b");
                 if (isSolution(current.state)) {
                     current = root;
                 } else {
@@ -639,7 +639,6 @@ public class Main {
                     // Otherwise, see if it passes the random formula
                     while (!successorPassed && time < 10) {
                         time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                        //System.out.println(time + "c");
                         if (time > 10) {
                             break;
                         }
@@ -698,7 +697,6 @@ public class Main {
                         }
                     }
                     time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                    //System.out.println(time + "d");
                     if (time > 10) {
                         break;
                     }
@@ -1100,8 +1098,8 @@ public class Main {
         else { //(searchType == 2)
             // NOTE: Sim annealing is far better than just permitting sideways moves
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            //sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
-            simAnnealOpt(totalNodesExpanded, startTime, heuristic, root);
+            sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
+            //simAnnealOpt(totalNodesExpanded, startTime, heuristic, root);
         }
     }
 }
