@@ -357,195 +357,6 @@ public class Main {
     // Greedy hill climbing with simulated annealing
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
-    public static void simAnneal(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
-        // Do not take a better move even if one exists, unless it is immediately
-        // a solution
-        // Should do resets if too many consecutive rerolls or too low temp
-        int timeStep = 1;
-        int numResets = 0;
-        // Test with starting temp 5, 50, 500, 5000
-        double currentTemp = 5;
-        double startingTemp = 5;
-        int currentRerolls = 0;
-        // For rerollLimit, 100 seems better than 1000, which is better than
-        // 10 which is better than 1
-        int rerollLimit = 100;
-        // For geo, annealing constant 0.9 appears better than 0.8
-        // but need to test
-        double annealingConstant = 0.9;
-        // For log, tested with annealing constants 2, 5, 10,
-        // and none are better than geometric
-        while(!isSolution(current.state)) {
-            // First check if time has run out
-            double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-            if (timeInSeconds > 10) {
-                // A solution has not been found in 10 seconds
-                int depth = pathTo(current);
-                System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                if (depth == 0) {
-                    System.out.println("Effective branching factor = Infinity, no solution path was found.");
-                } else {
-                    double b = ((double)totalNodesExpanded / (double)depth);
-                    System.out.println("Effective branching factor = " + b);
-                }
-                System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                System.out.println("Total Cost: " + current.costAccumulated);
-                System.out.println("Resets: " + numResets);
-                return;
-            } else {
-                // Expand current node, then pick from best children
-                // Next we expand the current node, (add all possible successors as children based on heuristic)
-                int prevChildren = current.children.size();
-                Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
-                if (expanded.children.size() > prevChildren) {
-                    totalNodesExpanded++;
-                }
-                // Now, we pick a successor option at random out of all possible children,
-                // UNLESS ONE IS AN IMMEDIATE SOLUTION,
-                // (skipping a solution this way would make no sense)
-                for (Node<Queen[]> e: current.children) {
-                    timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                    if (isSolution(e.state)) {
-                        current = e;
-                        timeStep++;
-                        // Geometric version:
-                        currentTemp = currentTemp * annealingConstant;
-                        // Log version:
-                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
-                        // Found a solution:
-                        timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                        int depth = pathTo(current);
-                        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                        if (depth == 0) {
-                            System.out.println("Effective branching factor = 0, the start state was a solution.");
-                        } else {
-                            double b = ((double)totalNodesExpanded / (double)depth);
-                            System.out.println("Effective branching factor = " + b);
-                        }
-                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                        System.out.println("Total Cost: " + current.costAccumulated);
-                        System.out.println("Resets: " + numResets);
-                        return;
-                    } else if (timeInSeconds > 10) {
-                        // Did not find a solution:
-                        int depth = pathTo(current);
-                        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                        if (depth == 0) {
-                            System.out.println("Effective branching factor = Infinity, no solution path was found.");
-                        } else {
-                            double b = ((double)totalNodesExpanded / (double)depth);
-                            System.out.println("Effective branching factor = " + b);
-                        }
-                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                        System.out.println("Total Cost: " + current.costAccumulated);
-                        System.out.println("Resets: " + numResets);
-                        return;
-                    }
-                }
-                // Now that we are sure there are no immediate solutions, pick
-                // a successor at random until one passes the temperature formula
-                Random rand = new Random();
-                int size = current.children.size();
-                int choice = rand.nextInt(size);
-                boolean successorPassed = false;
-                // If successor is immediately better, pick it.
-                // Otherwise, see if it passes the random formula
-                while (!successorPassed) {
-                    timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                    if (timeInSeconds > 10) {
-                        // Did not find a solution:
-                        int depth = pathTo(current);
-                        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                        if (depth == 0) {
-                            System.out.println("Effective branching factor = Infinity, no solution path was found.");
-                        } else {
-                            double b = ((double)totalNodesExpanded / (double)depth);
-                            System.out.println("Effective branching factor = " + b);
-                        }
-                        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                        System.out.println("Total Cost: " + current.costAccumulated);
-                        System.out.println("Resets: " + numResets);
-                        return;
-                    }
-                    Node<Queen[]> successor = current.children.get(choice);
-                    if (successor.heuristicVal >= current.heuristicVal) {
-                        currentRerolls = 0;
-                        successorPassed = true;
-                        current = successor;
-                        timeStep++;
-                        // Geometric version:
-                        currentTemp = currentTemp * annealingConstant;
-                        // Log version:
-                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
-                    } else {
-                        double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
-                        double probability = Math.pow(Math.E, power);
-                        double probToBeat = rand.nextDouble();
-                        if (probToBeat <= probability) {
-                            currentRerolls = 0;
-                            // Keep this one
-                            successorPassed = true;
-                            current = successor;
-                            timeStep++;
-                            // Geometric version:
-                            currentTemp = currentTemp * annealingConstant;
-                            // Log version:
-                            //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
-                        } else {
-                            timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                            if (timeInSeconds > 10) {
-                                // Did not find a solution:
-                                int depth = pathTo(current);
-                                System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                                if (depth == 0) {
-                                    System.out.println("Effective branching factor = Infinity, no solution path was found.");
-                                } else {
-                                    double b = ((double)totalNodesExpanded / (double)depth);
-                                    System.out.println("Effective branching factor = " + b);
-                                }
-                                System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                                System.out.println("Total Cost: " + current.costAccumulated);
-                                System.out.println("Resets: " + numResets);
-                                return;
-                            }
-                            currentRerolls++;
-                            if (currentRerolls == rerollLimit) {
-                                // Reset due to too many rerolls
-                                currentRerolls = 0;
-                                numResets++;
-                                current = root;
-                                timeStep = 1;
-                                currentTemp = startingTemp;
-                                successorPassed = true;
-                            } else {
-                                // Pick another successor
-                                choice = rand.nextInt(size);
-                                //System.out.println("Rerolling " + probToBeat + "  " + probability + "  " + power);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Found a solution:
-        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-        int depth = pathTo(current);
-        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-        if (depth == 0) {
-            System.out.println("Effective branching factor = 0, the start state was a solution.");
-        } else {
-            double b = ((double)totalNodesExpanded / (double)depth);
-            System.out.println("Effective branching factor = " + b);
-        }
-        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-        System.out.println("Total Cost: " + current.costAccumulated);
-        System.out.println("Resets: " + numResets);
-        return;
-    }
-
-    // Greedy hill climbing with simulated annealing
-    // Instead of always taking the best move, pick a move at random and
-    // take it with a probability
     // This version resets if < 10 seconds, tries to find best solution it can
     public static void simAnnealOpt(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         // Do not take a better move even if one exists, unless it is immediately
@@ -557,8 +368,8 @@ public class Main {
         int numResets = 0;
         int optResets = 0; // # of resets before the optimal solution was found
         // Test with starting temp 5, 50, 500, 5000
-        double currentTemp = 5;
-        double startingTemp = 5;
+        double currentTemp = 500;
+        double startingTemp = 500;
         int currentRerolls = 0;
         // For rerollLimit, 100 seems better than 1000, which is better than
         // 10 which is better than 1
@@ -704,14 +515,13 @@ public class Main {
             }
         }
         // Return the best solution found, if any:
-        //time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         if (optimalSolution != null) {
             int depth = pathTo(optimalSolution);
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
             if (depth == 0) {
                 System.out.println("Effective branching factor = 0, the start state was a solution.");
             } else {
-                double b = ((double)totalNodesExpanded / (double)depth);
+                double b = Math.pow(totalNodesExpanded, (1/(double)depth));
                 System.out.println("Effective branching factor = " + b);
             }
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
@@ -725,127 +535,199 @@ public class Main {
         }
     }
 
-    // Do greedy hill climbing with sideways moves
-    public static void sideWays(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
-        // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-        int sideWaysMoves = 0; // Reset after a certain # of sideways moves
-        int sideWaysMovesLimit = 100; // Adjust as desired
-        // NOTE: Has problems with n > 9 boards
-        int numResets = 0; // Keep track of the number of times you reset
-        while(!isSolution(current.state)) {
-            // First expand current node, then pick from best children
-            // Next we expand the current node, (add all possible successors as children based on heuristic)
-            int prevChildren = current.children.size();
-            Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
-            if (expanded.children.size() > prevChildren) {
-                totalNodesExpanded++;
-            }
-            // Now we look at each of the children of the current state that have been generated and
-            // pick one at random to use next based on what has the best heuristic, ignoring cost
-            int bestHeuristic = -1;
-            ArrayList<Node<Queen[]>> options = new ArrayList<Node<Queen[]>>();
-            for (Node<Queen[]> e: current.children) {
-                if (e.heuristicVal < bestHeuristic || bestHeuristic == -1) {
-                    bestHeuristic = e.heuristicVal;
-                    options = new ArrayList<Node<Queen[]>>();
-                    options.add(e);
-                } else if (e.heuristicVal == bestHeuristic) {
-                    options.add(e);
-                }
-            }
-            // What do we do if no children provide improvements or sideways? Reset!
-            if (bestHeuristic > current.heuristicVal) {
-                double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                if (timeInSeconds < 10) {
-                    current = root;
-                    //System.out.println("Resetting, no improvements!");
-                    sideWaysMoves = 0;
-                    numResets++;
-                } else {
-                    // A solution is not found after 10s. Print out some info:
-                    // Nodes expanded and time are across all restarts,
-                    // costAccumulated is only for the path that we end up with
-                    int depth = pathTo(current);
-                    System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                    if (depth == 0) {
-                        System.out.println("Effective branching factor = Infinity, no solution path was found.");
-                    } else {
-                        double b = ((double)totalNodesExpanded / (double)depth);
-                        System.out.println("Effective branching factor = " + b);
-                    }
-                    System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                    System.out.println("Total Cost: " + current.costAccumulated);
-                    System.out.println("Resets: " + numResets);
-                    return;
-                }
+    // Greedy hill climbing with simulated annealing and a limit on sideways or worsening moves
+    // Instead of always taking the best move, pick a move at random and
+    // take it with a probability
+    // This version resets if < 10 seconds, tries to find best solution it can
+    public static void simAnnealOpt2(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+        // Do not take a better move even if one exists, unless it is immediately
+        // a solution
+        // Should do resets if too many consecutive rerolls or too low temp
+        int timeStep = 1;
+        int sidewaysLimit = 100;
+        int sidewaysMoves = 0;
+        Node<Queen[]> optimalSolution = null;
+        double optimalSolutionTime = 0;
+        int numResets = 0;
+        // Test with starting temp 5, 50, 500, 5000
+        double currentTemp = 500;
+        double startingTemp = 500;
+        double currentRerolls = 0;
+        double solutionsFound = 0;
+        int solutionsTotal = 0;
+        // For rerollLimit, 10 seems better than others for this function
+        int rerollLimit = 10;
+        // For geo, annealing constant 0.9 appears best
+        double annealingConstant = 0.9;
+        // For log, tested with annealing constants 2, 5, 10,
+        // and none are better than geometric
+        double time = 0;
+        while (time < 10) {
+            // First check if time has run out
+            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+            if (time > 10) {
+                break;
             } else {
-                int pastResets = numResets;
-                // When making a sideways move,
-                // see if it violates the limit for sideways moves or not
-                if (bestHeuristic == current.heuristicVal) {
-                    sideWaysMoves++;
-                    if (sideWaysMoves > sideWaysMovesLimit) {
-                        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-                        if (timeInSeconds < 10) {
-                            current = root;
-                            //System.out.println("Resetting, too many sideways!");
-                            sideWaysMoves = 0;
-                            numResets++;
-                        } else {
-                            // A solution is not found after 10s. Print out some info:
-                            // Nodes expanded and time are across all restarts,
-                            // costAccumulated is only for the path that we end up with
-                            int depth = pathTo(current);
-                            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-                            if (depth == 0) {
-                                System.out.println("Effective branching factor = Infinity, no solution path found.");
-                            } else {
-                                double b = ((double)totalNodesExpanded / (double)depth);
-                                System.out.println("Effective branching factor = " + b);
+                // Expand current node, then pick from best children
+                // Next we expand the current node, (add all possible successors as children based on heuristic)
+                int prevChildren = current.children.size();
+                Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
+                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                if (time > 10) {
+                    break;
+                }
+                totalNodesExpanded++;
+                // Now, we pick a successor option at random out of all possible children,
+                // UNLESS ONE IS AN IMMEDIATE SOLUTION,
+                // (skipping a solution this way would make no sense)
+                for (Node<Queen[]> e: current.children) {
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        break;
+                    }
+                    if (isSolution(e.state)) {
+                        current = e;
+                        timeStep++;
+                        // Geometric version:
+                        currentTemp = currentTemp * annealingConstant;
+                        // Log version:
+                        //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        // Found a solution:
+                        time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                        int costFound = current.costAccumulated;
+                        solutionsFound++;
+                        solutionsTotal += costFound;
+                        if (optimalSolution == null || optimalSolution.costAccumulated > costFound) {
+                            optimalSolutionTime = time;
+                            optimalSolution = current;
+                        }
+                        // Reset due to finding solution
+                        numResets++;
+                        currentRerolls = 0;
+                        timeStep = 1;
+                        currentTemp = startingTemp;
+                        break;
+                    }
+                }
+                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                if (time > 10) {
+                    break;
+                }
+                if (isSolution(current.state)) {
+                    current = root;
+                } else {
+                    // Check time passed again
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        break;
+                    }
+                    // Now that we are sure there are no immediate solutions, pick
+                    // a successor at random until one passes the temperature formula
+                    Random rand = new Random();
+                    int size = current.children.size();
+                    int choice = rand.nextInt(size);
+                    boolean successorPassed = false;
+                    // If successor is immediately better, pick it.
+                    // Otherwise, see if it passes the random formula
+                    while (!successorPassed && time < 10) {
+                        time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                        if (time > 10) {
+                            break;
+                        }
+                        Node<Queen[]> successor = current.children.get(choice);
+                        if (successor.heuristicVal > current.heuristicVal) {
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                break;
                             }
-                            System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-                            System.out.println("Total Cost: " + current.costAccumulated);
-                            System.out.println("Resets: " + numResets);
-                            return;
+                            sidewaysMoves = 0;
+                            currentRerolls = 0;
+                            successorPassed = true;
+                            current = successor;
+                            timeStep++;
+                            // Geometric version:
+                            currentTemp = currentTemp * annealingConstant;
+                            // Log version:
+                            //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                        } else {
+                            time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                            if (time > 10) {
+                                break;
+                            }
+                            double power = (successor.heuristicVal - current.heuristicVal) / currentTemp;
+                            double probability = Math.pow(Math.E, power);
+                            double probToBeat = rand.nextDouble();
+                            if (probToBeat <= probability) {
+                                sidewaysMoves++;
+                                currentRerolls = 0;
+                                if (sidewaysMoves == sidewaysLimit) {
+                                    // Reset due to reaching limit of sideways moves
+                                    sidewaysMoves = 0;
+                                    numResets++;
+                                    currentRerolls = 0;
+                                    current = root;
+                                    timeStep = 1;
+                                    currentTemp = startingTemp;
+                                    successorPassed = true;
+                                } else {
+                                    // Keep this one
+                                    successorPassed = true;
+                                    current = successor;
+                                    timeStep++;
+                                    // Geometric version:
+                                    currentTemp = currentTemp * annealingConstant;
+                                    // Log version:
+                                    //currentTemp = currentTemp / (Math.log(timeStep + annealingConstant) / Math.log(annealingConstant));
+                                }
+                            } else {
+                                time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                                if (time > 10) {
+                                    break;
+                                }
+                                currentRerolls++;
+                                if (currentRerolls == rerollLimit) {
+                                    // Reset due to too many rerolls
+                                    sidewaysMoves = 0;
+                                    numResets++;
+                                    currentRerolls = 0;
+                                    current = root;
+                                    timeStep = 1;
+                                    currentTemp = startingTemp;
+                                    successorPassed = true;
+                                } else {
+                                    // Pick another successor
+                                    choice = rand.nextInt(size);
+                                }
+                            }
                         }
                     }
-                } else { // We've made an improvement, so reset the tolerance
-                    // for sideways moves
-                    sideWaysMoves = 0;
-                }
-                // If we did not just reset from too many sideways moves,
-                // make a move
-                if (pastResets == numResets) {
-                    // Now that we have a list of best possible children that are better,
-                    // pick one at random for the next looping
-                    int choice = options.size();
-                    Random rand = new Random();
-                    // NOTE: DOES NOT NECESSARILY PICK OPTIONS
-                    // THAT IMPROVE IF THEY HAVE SAME H VALUE
-                    // AS ONES THAT DONT, (if 4 is attacked at minimum
-                    // no matter what, it can pick a move that does not
-                    // help immediately even if one exists)
-                    choice = rand.nextInt(choice);
-                    current = options.get(choice);
+                    time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
+                    if (time > 10) {
+                        break;
                     }
                 }
+            }
         }
-        double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
-        // A solution is found! Print out some info:
-        // Nodes expanded and time are across all restarts,
-        // costAccumulated is only for the path that we end up with
-        int depth = pathTo(current);
-        System.out.println("Number of nodes expanded: " + totalNodesExpanded);
-        if (depth == 0) {
-            System.out.println("Effective branching factor = 0, the start state was a solution.");
+        // Return the best solution found, if any:
+        if (optimalSolution != null) {
+            int depth = pathTo(optimalSolution);
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            if (depth == 0) {
+                System.out.println("Effective branching factor = 0, the start state was a solution.");
+            } else {
+                double b = Math.pow(totalNodesExpanded, (1/(double)depth));
+                System.out.println("Effective branching factor = " + b);
+            }
+            System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
+            System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
+            System.out.println("Resets: " + numResets);
+            System.out.println("Average cost of solutions found: " + (solutionsTotal / solutionsFound));
         } else {
-            double b = ((double)totalNodesExpanded / (double)depth);
-            System.out.println("Effective branching factor = " + b);
+            System.out.println("No solution path found.");
+            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            System.out.println("Effective branching factor = Infinity, no solution path found.");
+            System.out.println("Resets: " + numResets);
         }
-        System.out.println("Time Elapsed: " + timeInSeconds + " seconds");
-        System.out.println("Total Cost: " + current.costAccumulated);
-        System.out.println("Resets: " + numResets);
-        return;
     }
 
     // Do greedy hill climbing with sideways moves
@@ -859,16 +741,18 @@ public class Main {
         double timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
         Node<Queen[]> optimalSolution = null;
         double optimalSolutionTime = 0;
-        int optimalSolutionReset = 0;
+        double solutionsTotal = 0;
+        double solutionsFound = 0;
         while(timeInSeconds <= 10) {
             // See if the current node is a solution
             if (isSolution(current.state)) {
+                solutionsFound++;
+                solutionsTotal += current.costAccumulated;
                 timeInSeconds = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (optimalSolution == null ||
                         current.costAccumulated < optimalSolution.costAccumulated) {
                     optimalSolution = current;
                     optimalSolutionTime = timeInSeconds;
-                    optimalSolutionReset = numResets;
                 }
                 current = root;
                 numResets++;
@@ -877,9 +761,7 @@ public class Main {
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
                 int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
-                if (expanded.children.size() > prevChildren) {
-                    totalNodesExpanded++;
-                }
+                totalNodesExpanded++;
                 // Now we look at each of the children of the current state that have been generated and
                 // pick one at random to use next based on what has the best heuristic, ignoring cost
                 int bestHeuristic = -1;
@@ -896,7 +778,6 @@ public class Main {
                 // What do we do if no children provide improvements or sideways? Reset!
                 if (bestHeuristic > current.heuristicVal) {
                     current = root;
-                    //System.out.println("Resetting, no improvements!");
                     sideWaysMoves = 0;
                     numResets++;
                 } else {
@@ -906,8 +787,8 @@ public class Main {
                     if (bestHeuristic == current.heuristicVal) {
                         sideWaysMoves++;
                         if (sideWaysMoves > sideWaysMovesLimit) {
+                            totalNodesExpanded = 0;
                             current = root;
-                            //System.out.println("Resetting, too many sideways!");
                             sideWaysMoves = 0;
                             numResets++;
                         }
@@ -932,16 +813,17 @@ public class Main {
         // Print out some info on the best solution found
         if (optimalSolution != null) {
             int depth = pathTo(optimalSolution);
-            System.out.println("Number of nodes expanded: " + totalNodesExpanded);
+            System.out.println("Number of nodes expanded total: " + totalNodesExpanded);
             if (depth == 0) {
                 System.out.println("Effective branching factor = 0, the start state was a solution.");
             } else {
-                double b = ((double)totalNodesExpanded / (double)depth);
+                double b = Math.pow(totalNodesExpanded, (1/(double)depth));
                 System.out.println("Effective branching factor = " + b);
             }
             System.out.println("Best Solution Found At: " + optimalSolutionTime + " seconds");
             System.out.println("Total Cost of Best Solution: " + optimalSolution.costAccumulated);
             System.out.println("Resets: " + numResets);
+            System.out.println("Average cost of solutions found: " + (solutionsTotal / solutionsFound));
         } else {
             System.out.println("No solution path found.");
             System.out.println("Number of nodes expanded: " + totalNodesExpanded);
@@ -1017,7 +899,8 @@ public class Main {
                     if (depth == 0) {
                         System.out.println("Effective branching factor = Infinity, no solution path found.");
                     } else {
-                        double b = ((double)totalNodesExpanded / (double)depth);
+                        // Approximate Effective Branching Factor
+                        double b = Math.pow(totalNodesExpanded, (1/(double)depth));
                         System.out.println("Effective branching factor = " + b);
                     }
                     System.out.println("Total Cost: " + current.costAccumulated);
@@ -1031,7 +914,7 @@ public class Main {
                         if (depth == 0) {
                             System.out.println("Effective branching factor = 0, the start state was a solution.");
                         } else {
-                            double b = ((double)totalNodesExpanded / (double)depth);
+                            double b = Math.pow(totalNodesExpanded, (1/(double)depth));
                             System.out.println("Effective branching factor = " + b);
                         }
                         System.out.println("Solution Found at: " + timeInSeconds + " seconds");
@@ -1094,12 +977,16 @@ public class Main {
             // Score = heuristic value + cost to get here,
             // choose node with lowest score to expand next
         }
-
         else { //(searchType == 2)
-            // NOTE: Sim annealing is far better than just permitting sideways moves
             // Perform greedy hill climbing with restarts for 10 seconds or less if solution is found
-            sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
-            //simAnnealOpt(totalNodesExpanded, startTime, heuristic, root);
+            if (heuristic.equals("h2") && root.state.length > 9) {
+                sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
+            } else {
+                simAnnealOpt2(totalNodesExpanded, startTime, heuristic, root);
+            }
         }
+        // Insert test here for comparing same boards using A* and greedy
+        root.children = new ArrayList<Node<Queen[]>>();
+        simAnnealOpt2(0, System.currentTimeMillis(), heuristic, root);
     }
 }
