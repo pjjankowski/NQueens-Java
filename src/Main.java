@@ -539,12 +539,12 @@ public class Main {
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
     // This version resets if < 10 seconds, tries to find best solution it can
-    public static void simAnnealOpt2(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
+    public static void simAnnealOpt2(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root, int testParam) {
         // Do not take a better move even if one exists, unless it is immediately
         // a solution
         // Should do resets if too many consecutive rerolls or too low temp
         int timeStep = 1;
-        int sidewaysLimit = 100;
+        int sidewaysLimit = testParam;
         int sidewaysMoves = 0;
         Node<Queen[]> optimalSolution = null;
         double optimalSolutionTime = 0;
@@ -858,10 +858,6 @@ public class Main {
             startState[j] = new Queen(state[j]);
         }
 
-        // Test to show hCurrent is working
-        //int test = hCurrent(state, heuristic);
-        //System.out.println("Starting board heuristic value: " + test);
-
         // Now, make the root node for reference later if you must reset
         Node<Queen[]> root = new Node<Queen[]>(state);
         root.heuristicVal = hCurrent(state, heuristic);
@@ -982,11 +978,13 @@ public class Main {
             if (heuristic.equals("h2") && root.state.length > 9) {
                 sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
             } else {
-                simAnnealOpt2(totalNodesExpanded, startTime, heuristic, root);
+                for (int testParam = 1; testParam < 10000; testParam *= 10) {
+                    simAnnealOpt2(totalNodesExpanded, startTime, heuristic, root, testParam);
+                    startTime = System.currentTimeMillis();
+                    root.children = new ArrayList<Node<Queen[]>>();
+                    totalNodesExpanded = 0;
+                }
             }
         }
-        // Insert test here for comparing same boards using A* and greedy
-        root.children = new ArrayList<Node<Queen[]>>();
-        simAnnealOpt2(0, System.currentTimeMillis(), heuristic, root);
     }
 }
