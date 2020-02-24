@@ -354,7 +354,7 @@ public class Main {
         return board;
     }
 
-    // Greedy hill climbing with simulated annealing
+    // Greedy hill climbing with simulated annealing, but no limit on sideways moves
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
     // This version resets if < 10 seconds, tries to find best solution it can
@@ -366,10 +366,9 @@ public class Main {
         Node<Queen[]> optimalSolution = null;
         double optimalSolutionTime = 0;
         int numResets = 0;
-        int optResets = 0; // # of resets before the optimal solution was found
-        // Test with starting temp 5, 50, 500, 5000
-        double currentTemp = 500;
-        double startingTemp = 500;
+        // Test with starting temp 5, 50, 500
+        double currentTemp = 50;
+        double startingTemp = 50;
         int currentRerolls = 0;
         // For rerollLimit, 100 seems better than 1000, which is better than
         // 10 which is better than 1
@@ -388,15 +387,12 @@ public class Main {
             } else {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                 time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (time > 10) {
                     break;
                 }
-                if (expanded.children.size() > prevChildren) {
-                    totalNodesExpanded++;
-                }
+                totalNodesExpanded++;
                 // Now, we pick a successor option at random out of all possible children,
                 // UNLESS ONE IS AN IMMEDIATE SOLUTION,
                 // (skipping a solution this way would make no sense)
@@ -416,7 +412,6 @@ public class Main {
                         time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                         int costFound = current.costAccumulated;
                         if (optimalSolution == null || optimalSolution.costAccumulated > costFound) {
-                            optResets = numResets;
                             optimalSolutionTime = time;
                             optimalSolution = current;
                         }
@@ -539,27 +534,27 @@ public class Main {
     // Instead of always taking the best move, pick a move at random and
     // take it with a probability
     // This version resets if < 10 seconds, tries to find best solution it can
-    public static void simAnnealOpt2(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root, int testParam) {
+    public static void simAnnealOpt2(int totalNodesExpanded, long startTime, String heuristic, Node<Queen[]> root) {
         // Do not take a better move even if one exists, unless it is immediately
         // a solution
         // Should do resets if too many consecutive rerolls or too low temp
         int timeStep = 1;
-        int sidewaysLimit = testParam;
+        int sidewaysLimit = 100;
         int sidewaysMoves = 0;
         Node<Queen[]> optimalSolution = null;
         double optimalSolutionTime = 0;
         int numResets = 0;
-        // Test with starting temp 5, 50, 500, 5000
-        double currentTemp = 500;
-        double startingTemp = 500;
+        // Test with starting temp 5, 50, 500 shows 50 is best that works for 12x12
+        double currentTemp = 50;
+        double startingTemp = 50;
         double currentRerolls = 0;
         double solutionsFound = 0;
         int solutionsTotal = 0;
-        // For rerollLimit, 10 seems better than others for this function
-        int rerollLimit = 10;
-        // For geo, annealing constant 0.9 appears best
+        // For rerollLimit, 100 beats 1, 10, 100, 1000
+        int rerollLimit = 100;
+        // Annealing constant 0.9 is better than 0.85 or 0.95
         double annealingConstant = 0.9;
-        // For log, tested with annealing constants 2, 5, 10,
+        // For log, tested with annealing constants 2, 5, 10, 100,
         // and none are better than geometric
         double time = 0;
         while (time < 10) {
@@ -570,7 +565,6 @@ public class Main {
             } else {
                 // Expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                 time = ((double)System.currentTimeMillis() - (double)startTime) / 1000;
                 if (time > 10) {
@@ -759,7 +753,6 @@ public class Main {
             } else {
                 // If not a solution, expand current node, then pick from best children
                 // Next we expand the current node, (add all possible successors as children based on heuristic)
-                int prevChildren = current.children.size();
                 Node<Queen[]> expanded = hExpand(current, heuristic, startTime);
                 totalNodesExpanded++;
                 // Now we look at each of the children of the current state that have been generated and
@@ -978,12 +971,7 @@ public class Main {
             if (heuristic.equals("h2") && root.state.length > 9) {
                 sideWaysOpt(totalNodesExpanded, startTime, heuristic, root);
             } else {
-                for (int testParam = 1; testParam < 10000; testParam *= 10) {
-                    simAnnealOpt2(totalNodesExpanded, startTime, heuristic, root, testParam);
-                    startTime = System.currentTimeMillis();
-                    root.children = new ArrayList<Node<Queen[]>>();
-                    totalNodesExpanded = 0;
-                }
+                simAnnealOpt2(totalNodesExpanded, startTime, heuristic, root);
             }
         }
     }
